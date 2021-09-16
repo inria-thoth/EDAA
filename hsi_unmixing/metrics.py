@@ -2,7 +2,7 @@ import torch.nn as nn
 
 
 class SAD(nn.Module):
-  def __init__(self, num_bands: int=156):
+  def __init__(self, num_bands):
     super(SAD, self).__init__()
     self.num_bands = num_bands
 
