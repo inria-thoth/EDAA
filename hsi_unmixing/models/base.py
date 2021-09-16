@@ -27,7 +27,8 @@ class BaseModel(nn.Module):
     def extract_endmembers(self):
         raise NotImplementedError
 
-    def plot_endmembers(self, endmembers, save=True):
+    def plot_endmembers(self, save=True):
+	endmembers = self.extract_endmembers()
         # TODO Loop on the first dimension (R, B)
 	fig, ax = plt.subplots(1,self.n_endmembers)
 	for indx in range(self.n_endmembers):
@@ -37,8 +38,9 @@ class BaseModel(nn.Module):
 		plt.savefig(self.save_figs_dir + '/endmembers.png')
 	plt.show()
 
-    def plot_abundances(self, abundances, save=True):
+    def plot_abundances(self, x, save=True):
         # TODO Loop on the last dimensions to plot the abundances (H, W, R)
+	abundances = self.extract_abundances(x)
 	fig, ax = plt.subplots(1,self.n_endmembers)
         for indx in range(self.n_endmembers):
 		abund = abundaces[:,:,indx]
