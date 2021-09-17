@@ -46,11 +46,24 @@ class BaseModel(pl.LightningModule):
         raise NotImplementedError
 
     def plot_endmembers(self, save=True):
-        endmembers = self.extract_endmembers()
+	endmembers = self.extract_endmembers()
         # TODO Loop on the first dimension (R, B)
-        pass
+	fig, ax = plt.subplots(1,self.n_endmembers)
+	for indx in range(self.n_endmembers):
+		endmember = endmembers[indx]
+		ax[indx].plot(endmember)
+	if save:
+		plt.savefig(self.save_figs_dir + '/endmembers.png')
+	plt.show()
 
     def plot_abundances(self, x, save=True):
         # TODO Loop on the last dimensions to plot the abundances (H, W, R)
-        abundances = self.extract_abundances(x)
-        pass
+	abundances = self.extract_abundances(x)
+	fig, ax = plt.subplots(1,self.n_endmembers)
+        for indx in range(self.n_endmembers):
+		abund = abundaces[:,:,indx]
+		ax[indx].imshow(abund)
+		ax[indx].get_xaxis().set_visible(False)
+    		ax[indx].get_yaxis().set_visible(False)
+	if save:
+		plt.savefig(self.save_figs_dir + '/abundances.png')
