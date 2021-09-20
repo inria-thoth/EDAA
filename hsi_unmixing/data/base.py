@@ -19,7 +19,8 @@ class BaseDataset(Dataset):
         self.path_gt = os.path.join(self.path_data_dir, self.gt_folder, self.gt_fname)
 
     def __getitem__(self, idx):
-        raise NotImplementedError
+        pixel = self.train_data[idx]
+        return torch.Tensor(pixel)
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.train_data)

@@ -45,14 +45,6 @@ class Samson(BaseDataset):
         self.endmembers = labels["M"].T
 
 
-    def __getitem__(self, idx):
-        pixel = self.train_data[idx]
-        return torch.Tensor(pixel)
-
-    def __len__(self):
-        return len(self.train_data)
-
-
 def check_samson():
     from torch.utils.data import DataLoader
 

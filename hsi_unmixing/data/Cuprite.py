@@ -41,16 +41,6 @@ class Cuprite(BaseDataset):
         self.abundances = None ## This dataset doesnt has Abundaces
         # reshape => (R, B)
         self.endmembers = labels['M'].T
-        
-
-    def __getitem__(self, idx):
-        pixel = self.train_data[idx]
-        return torch.Tensor(pixel)
-
-
-    def __len__(self):
-        return len(self.train_data)
-
 
 
 def check_cuprite():
