@@ -1,0 +1,6 @@
+logging_level: INFO
+params:
+  max_epochs: 300
+  deterministic: False
+  benchmark: True
+  profiler: "simple"

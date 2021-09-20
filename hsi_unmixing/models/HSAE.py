@@ -1,5 +1,3 @@
-# TODO Implement HSAE model
-
 import pdb
 import logging
 
@@ -14,12 +12,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 class HSAE(BaseModel):
-    def __init__(self, dropout=1.0, threshold=5, deep=True):
-        super().__init__()
+    def __init__(self, H, W, n_bands, n_endmembers, dropout=1.0, threshold=5, deep=True, save_figs_dir=None, **kwargs,):
+        super().__init__(save_figs_dir=save_figs_dir)
 
-        # Layers
-        self.asc = ASC()
-        self.gd = GaussianDropout(dropout)
+        # Architecture sizes
+        self.img_size = (H, W)
+        self.n_bands = n_bands
+        self.n_endmembers = n_endmembers
 
         if deep:
             layers = [
@@ -32,16 +31,16 @@ class HSAE(BaseModel):
                 nn.Linear(3 * self.n_endmembers, self.n_endmembers),
                 nn.BatchNorm1d(self.n_endmembers),
                 nn.Softplus(threshold=threshold),
-                self.asc,
-                self.gd,
+                ASC(),
+                GaussianDropout(dropout),
             ]
         else:
             layers = [
                 nn.Linear(self.n_bands, self.n_endmembers),
                 nn.BatchNorm1d(self.n_endmembers),
                 nn.Softplus(threshold=threshold),
-                self.asc,
-                self.gd,
+                ASC(),
+                GaussianDropout(dropout),
 
             ]
 
@@ -61,5 +60,15 @@ class HSAE(BaseModel):
         self.eval()
         h = self.encoder(x)
         # Reshape the abundances => (H, W, R)
-        abundances = h.reshape(*self.img_size, self.bands)
+        abundances = h.reshape(*self.img_size, self.n_endmembers)
         return abundances
+
+def check_HSAE():
+    x = torch.randn(16, 156)
+    model = HSAE(H=95, W=95, n_bands=156, n_endmembers=3)
+    model.eval()
+    x_hat = model(x)
+    assert x_hat.shape == x.shape
+
+if __name__ == "__main__":
+    check_HSAE()

@@ -23,8 +23,12 @@ class Samson(BaseDataset):
     gt_fname = "end3.mat"
 
 
-    def __init__(self, path_data_dir):
-        super().__init__(path_data_dir)
+    def __init__(self, path_data_dir, H, W, n_endmembers, n_bands, **kwargs):
+        super().__init__(path_data_dir, **kwargs)
+
+        assert self.img_size == (H, W)
+        assert self.n_bands == n_bands
+        assert self.n_endmembers == n_endmembers
 
         training_data = sp.loadmat(self.path_img)
         # values 'V' shape => (B, H * W)

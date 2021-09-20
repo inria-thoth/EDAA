@@ -1,0 +1,10 @@
+class_name: HSAE
+id: "${model.class_name}"
+params:
+  H: ${data.params.H}
+  W: ${data.params.W}
+  n_endmembers: ${data.params.n_endmembers}
+  n_bands: ${data.params.n_bands}
+  dropout: 1.0
+  threshold: 5
+  deep: true

@@ -1,0 +1,9 @@
+class_name: Samson
+batch_size: 25
+id: "${data.class_name}_bs${data.batch_size}"
+params:
+  path_data_dir: "./data"
+  H: 95
+  W: 95
+  n_endmembers: 3
+  n_bands: 156
