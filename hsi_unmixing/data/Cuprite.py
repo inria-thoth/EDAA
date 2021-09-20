@@ -22,7 +22,6 @@ class Cuprite(BaseDataset):
 
 
     def __init__(self, path_data_dir, n_bands=188):
-        super().__init__(path_data_dir)
 
         if n_bands == 188:
             self.n_bands = 188
@@ -31,8 +30,7 @@ class Cuprite(BaseDataset):
             self.n_bands = 224
             self.img_fname = "CupriteS1_F224.mat"
 
-        self.path_img = os.path.join(self.img_folder, self.img_fname)
-        self.path_gt = os.path.join(self.gt_folder, self.gt_fname)
+        super().__init__(path_data_dir)
 
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
