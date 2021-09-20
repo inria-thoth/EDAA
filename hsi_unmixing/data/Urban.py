@@ -19,7 +19,6 @@ class Urban(BaseDataset):
 
 
     def __init__(self, path_data_dir, n_bands=162 , n_endmembers=4 ):
-        super().__init__(path_data_dir)
 
         if n_bands == 162:
             self.n_bands = 162
@@ -38,8 +37,10 @@ class Urban(BaseDataset):
             self.n_endmembers = 6
             self.gt_fname = os.path.join("groundTruth_Urban_end6","end6_groundTruth.mat")
 
-        self.path_img = os.path.join(self.img_folder, self.img_fname)
-        self.path_gt = os.path.join(self.gt_folder, self.gt_fname)
+        # self.path_img = os.path.join(self.img_folder, self.img_fname)
+        # self.path_gt = os.path.join(self.gt_folder, self.gt_fname)
+
+        super().__init__(path_data_dir)
 
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
