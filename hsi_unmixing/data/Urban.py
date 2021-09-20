@@ -1,4 +1,4 @@
-mport pdb
+import pdb
 import logging
 import os
 
@@ -12,29 +12,44 @@ from .base import BaseDataset
 
 class Urban(BaseDataset):
 
-    n_bands = 
-    img_size =
-    n_endmembers =
+    img_size = (307,307)
 
-    img_folder = os.path.join()
-    gt_folder = os.path.join()
-
-    img_fname = 
-    gt_fname = 
+    img_folder = os.path.join("Urban","Data_Matlab")
+    gt_folder = os.path.join("Urban","GroundTruth")
 
 
-    def __init__(self, path_data_dir):
+    def __init__(self, path_data_dir, n_bands=162 , n_endmembers=4 ):
         super().__init__(path_data_dir)
+
+        if n_bands == 162:
+            self.n_bands = 162
+            self.img_fname = "Urban_R162.mat"
+        else: 
+            self.n_bands = 210
+            self.img_fname = "Urban_F210.mat"
+        
+        if n_endmembers==4: 
+            self.n_endmembers = 4
+            self.gt_fname = os.path.join("groundTruth_Urban_end4","end4_groundTruth.mat")
+        elif n_endmembers ==5: 
+            self.n_endmembers = 5
+            self.gt_fname = os.path.join("groundTruth_Urban_end5","end5_groundTruth.mat")
+        else: 
+            self.n_endmembers = 6
+            self.gt_fname = os.path.join("groundTruth_Urban_end6","end6_groundTruth.mat")
+
+        self.path_img = os.path.join(self.img_folder, self.img_fname)
+        self.path_gt = os.path.join(self.gt_folder, self.gt_fname)
 
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
 
         # reshape => (H * W, B)
-        self.train_data = training_data
+        self.train_data = training_data['Y'].T
         # reshape => (H * W, R)
-        self.abundances = labels
+        self.abundances = labels['A'].T
         # reshape => (R, B)
-        self.endmembers = labels
+        self.endmembers = labels['M'].T
 
 
     def __getitem__(self, idx):
@@ -51,7 +66,7 @@ def check_urban():
     batch_size = 16
 
     urban_dset = Urban("./data")
-    train_dataloader = DataLoader(urban_dset,
+    train_dataloader = DataLoader(urban_dset,n_bands=162 , n_endmembers=4,
                                   batch_size=batch_size,
                                   shuffle=True)
     x = next(iter(train_dataloader))
