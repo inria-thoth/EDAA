@@ -4,3 +4,4 @@ params:
   deterministic: False
   benchmark: True
   profiler: "simple"
+  gpus: 0
