@@ -57,7 +57,7 @@ class BaseModel(pl.LightningModule):
         abundances = self.extract_abundances(x)
         fig, ax = plt.subplots(1,self.n_endmembers)
         for indx in range(self.n_endmembers):
-            abund = abundaces[:,:,indx]
+            abund = abundances[:,:,indx]
             ax[indx].imshow(abund)
             ax[indx].get_xaxis().set_visible(False)
             ax[indx].get_yaxis().set_visible(False)

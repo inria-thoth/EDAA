@@ -8,3 +8,4 @@ params:
   dropout: 1.0
   threshold: 5
   deep: true
+  save_figs_dir: "figures"

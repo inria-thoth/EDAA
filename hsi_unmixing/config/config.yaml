@@ -3,6 +3,8 @@ defaults:
   - model: hsae
   - trainer: default_trainer
 
+load_ckpt: null
+
 checkpoint:
   dirpath: "ckpts"
   save_last: True

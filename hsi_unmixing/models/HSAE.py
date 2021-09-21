@@ -54,7 +54,7 @@ class HSAE(BaseModel):
         return x_hat
 
     def extract_endmembers(self):
-        return self.decoder.weight
+        return self.decoder.weight.detach()
 
     def extract_abundances(self, x):
         self.eval()
