@@ -4,6 +4,7 @@ import os
 
 import scipy.io as sp
 import torch
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -22,6 +23,7 @@ class Cuprite(BaseDataset):
 
 
     def __init__(self, path_data_dir, n_bands=188):
+        super().__init__(path_data_dir)
 
         if n_bands == 188:
             self.n_bands = 188
@@ -30,10 +32,14 @@ class Cuprite(BaseDataset):
             self.n_bands = 224
             self.img_fname = "CupriteS1_F224.mat"
 
-        super().__init__(path_data_dir)
+
+        self.path_img = os.path.join(self.path_data_dir, self.img_folder, self.img_fname)
+        self.path_gt = os.path.join(self.path_data_dir, self.gt_folder, self.gt_fname)
 
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
+
+        pdb.set_trace()
 
         # reshape => (H * W, B)
         self.train_data = training_data['Y'].T
@@ -42,6 +48,10 @@ class Cuprite(BaseDataset):
         # reshape => (R, B)
         self.endmembers = labels['M'].T
 
+    def __getitem__(self, idx):
+        pixel = self.train_data[idx]
+        # TODO convert this pixel to a fitting tensor type
+        return torch.Tensor(pixel.astype('float32'))
 
 def check_cuprite():
     from torch.utils.data import DataLoader

@@ -22,6 +22,7 @@ class JasperRidge(BaseDataset):
 
 
     def __init__(self, path_data_dir, n_bands=198):
+        super().__init__(path_data_dir)
 
         if n_bands == 198:
             self.n_bands = 198
@@ -30,7 +31,8 @@ class JasperRidge(BaseDataset):
             self.n_bands = 224
             self.img_fname = "jasperRidge2_F224_2.mat"
 
-        super().__init__(path_data_dir)
+        self.path_img = os.path.join(self.path_data_dir, self.img_folder, self.img_fname)
+        self.path_gt = os.path.join(self.path_data_dir, self.gt_folder, self.gt_fname)
 
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
