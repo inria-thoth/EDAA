@@ -17,7 +17,6 @@ logger.setLevel(logging.DEBUG)
 
 @hydra.main(config_path="hsi_unmixing/config", config_name="config")
 def extract(cfg):
-
     # Choose device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Device used: {device}")
@@ -53,8 +52,8 @@ def extract(cfg):
 
     pdb.set_trace()
     # Set model to evaluation mode
-    # model.plot_abundances(img, save=True)
-    # model.plot_endmembers(save=True)
+    model.plot_abundances(img, save=True)
+    model.plot_endmembers(save=True)
 
 
 

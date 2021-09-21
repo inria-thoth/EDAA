@@ -1,4 +1,4 @@
-# Generic class that holds models
+import os
 import pdb
 import logging
 
@@ -23,8 +23,6 @@ class BaseModel(pl.LightningModule):
 
         self.save_figs_dir = save_figs_dir
 
-        # self.optimizer = optimizer
-
     def training_step(self, batch, batch_idx):
         x = batch
         x_hat = self(x)
@@ -43,17 +41,19 @@ class BaseModel(pl.LightningModule):
 
     def plot_endmembers(self, save=True):
         endmembers = self.extract_endmembers()
-        # TODO Loop on the first dimension (R, B)
+        # Loop on the first dimension (R, B)
         fig, ax = plt.subplots(1,self.n_endmembers)
         for indx in range(self.n_endmembers):
             endmember = endmembers[indx]
             ax[indx].plot(endmember)
         if save:
-            plt.savefig(self.save_figs_dir + '/endmembers.png')
+            if not os.path.exists(self.save_figs_dir):
+                os.makedirs(self.save_figs_dir, exists_ok=True)
+            plt.savefig(os.path.join(self.save_figs_dir, "endmembers.png"))
         plt.show()
 
     def plot_abundances(self, x, save=True):
-        # TODO Loop on the last dimensions to plot the abundances (H, W, R)
+        # Loop on the last dimensions to plot the abundances (H, W, R)
         abundances = self.extract_abundances(x)
         fig, ax = plt.subplots(1,self.n_endmembers)
         for indx in range(self.n_endmembers):
@@ -62,4 +62,6 @@ class BaseModel(pl.LightningModule):
             ax[indx].get_xaxis().set_visible(False)
             ax[indx].get_yaxis().set_visible(False)
         if save:
-            plt.savefig(self.save_figs_dir + '/abundances.png')
+            if not os.path.exists(self.save_figs_dir):
+                os.makedirs(self.save_figs_dir, exists_ok=True)
+            plt.savefig(os.path.join(self.save_figs_dir, "abundances.png"))
