@@ -1,7 +1,7 @@
 logging_level: INFO
 params:
-  max_epochs: 300
+  max_epochs: 250
   deterministic: False
   benchmark: True
   profiler: "simple"
-  gpus: 0
+  gpus: 1

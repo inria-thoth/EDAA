@@ -2,6 +2,7 @@ defaults:
   - data: samson
   - model: hsae
   - trainer: default_trainer
+  - optimizer: adam
 
 load_ckpt: null
 

@@ -5,7 +5,13 @@ params:
   W: ${data.params.W}
   n_endmembers: ${data.params.n_endmembers}
   n_bands: ${data.params.n_bands}
-  dropout: 1.0
-  threshold: 5
+  dropout: 0.2
+  threshold: 1.0
   deep: true
-  save_figs_dir: "figures"
+  base:
+    loss: "sad"
+    save_figs_dir: "figures"
+    optimizer:
+      class_name: ${optimizer.class_name}
+      params:
+        lr: ${optimizer.params.lr}

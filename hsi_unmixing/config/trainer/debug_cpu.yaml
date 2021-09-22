@@ -1,0 +1,6 @@
+logging_level: DEBUG
+params:
+  gpus: 0
+  deterministic: True
+  benchmark: False
+  fast_dev_run: True
