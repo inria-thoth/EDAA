@@ -23,7 +23,7 @@ class Samson(BaseDataset):
     gt_fname = "end3.mat"
 
 
-    def __init__(self, path_data_dir, H, W, n_endmembers, n_bands):
+    def __init__(self, path_data_dir, H=95, W=95, n_endmembers=3, n_bands=156):
         super().__init__(path_data_dir)
 
         # Assertions

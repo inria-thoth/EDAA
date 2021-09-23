@@ -14,6 +14,7 @@ class JasperRidge(BaseDataset):
 
     img_size = (100, 100)
     n_endmembers = 4
+    n_bands = 198
 
     img_folder = os.path.join("Jasper_Ridge","Data_Matlab")
     gt_folder = os.path.join("Jasper_Ridge","GroundTruth")
@@ -21,8 +22,13 @@ class JasperRidge(BaseDataset):
     gt_fname = "end4.mat"
 
 
-    def __init__(self, path_data_dir, n_bands=198):
+    def __init__(self, path_data_dir, H=100, W=100, n_endmembers=4, n_bands=198):
         super().__init__(path_data_dir)
+
+        # Assertions
+        assert self.img_size == (H, W)
+        assert self.n_bands == n_bands
+        assert self.n_endmembers == n_endmembers
 
         if n_bands == 198:
             self.n_bands = 198
@@ -49,7 +55,7 @@ def check_jasper_ridge():
 
     batch_size = 16
 
-    jasper_ridge_dset = JasperRidge("./data", n_bands=198)
+    jasper_ridge_dset = JasperRidge("./data")
     train_dataloader = DataLoader(jasper_ridge_dset,
                                   batch_size=batch_size,
                                   shuffle=True)

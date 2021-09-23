@@ -13,12 +13,14 @@ from .base import BaseDataset
 class Urban(BaseDataset):
 
     img_size = (307,307)
+    n_bands = 162
+    n_endmembers = 4
 
     img_folder = os.path.join("Urban","Data_Matlab")
     gt_folder = os.path.join("Urban","GroundTruth")
 
 
-    def __init__(self, path_data_dir, n_bands=162 , n_endmembers=4 ):
+    def __init__(self, path_data_dir, H=307, W=307, n_endmembers=4, n_bands=162 ):
 
         super().__init__(path_data_dir)
         if n_bands == 162:

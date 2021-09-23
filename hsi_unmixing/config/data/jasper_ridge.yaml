@@ -1,0 +1,9 @@
+class_name: JasperRidge
+batch_size: 20
+params:
+  path_data_dir: "./data"
+  H: 100
+  W: 100
+  n_endmembers: 4
+  n_bands: 198
+id: "${data.class_name}_bs${data.batch_size}_R${data.params.n_endmembers}_B${data.params.n_bands}"
