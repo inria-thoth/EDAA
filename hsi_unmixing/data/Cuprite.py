@@ -43,8 +43,6 @@ class Cuprite(BaseDataset):
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
 
-        pdb.set_trace()
-
         # reshape => (H * W, B)
         self.train_data = training_data['Y'].T
         # reshape => (H * W, R)
