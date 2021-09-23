@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 class HSAE(BaseModel):
-    def __init__(self, H, W, n_bands, n_endmembers, dropout=1.0, threshold=5, deep=True, save_figs_dir=None, **kwargs,):
-        super().__init__(save_figs_dir=save_figs_dir)
+    def __init__(self, base, H, W, n_bands, n_endmembers, dropout=1.0, threshold=5, deep=True):
+        super().__init__(**base)
 
         # Architecture sizes
         self.img_size = (H, W)
@@ -54,7 +54,7 @@ class HSAE(BaseModel):
         return x_hat
 
     def extract_endmembers(self):
-        return self.decoder.weight
+        return self.decoder.weight.detach()
 
     def extract_abundances(self, x):
         self.eval()

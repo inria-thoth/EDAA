@@ -4,6 +4,7 @@ import os
 
 import scipy.io as sp
 import torch
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -14,14 +15,20 @@ class Cuprite(BaseDataset):
 
     img_size = (250, 190)
     n_endmembers = 12
-
+    n_bands = 224
     img_folder = os.path.join("Cuprite","Data_Matlab")
     gt_folder = os.path.join("Cuprite","groundTruth_Cuprite_end12")
 
     gt_fname = "groundTruth_Cuprite_nEnd12.mat"
 
 
-    def __init__(self, path_data_dir, n_bands=188):
+    def __init__(self, path_data_dir, H=250, W=190, n_endmembers=12, n_bands=224):
+        #super().__init__(path_data_dir)
+	
+	 # Assertions
+        assert self.img_size == (H, W)
+        assert self.n_bands == n_bands
+        assert self.n_endmembers == n_endmembers
 
         if n_bands == 188:
             self.n_bands = 188
@@ -29,11 +36,14 @@ class Cuprite(BaseDataset):
         else: 
             self.n_bands = 224
             self.img_fname = "CupriteS1_F224.mat"
-
         super().__init__(path_data_dir)
+        self.path_img = os.path.join(self.path_data_dir, self.img_folder, self.img_fname)
+        self.path_gt = os.path.join(self.path_data_dir, self.gt_folder, self.gt_fname)
 
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
+
+        pdb.set_trace()
 
         # reshape => (H * W, B)
         self.train_data = training_data['Y'].T
@@ -42,13 +52,17 @@ class Cuprite(BaseDataset):
         # reshape => (R, B)
         self.endmembers = labels['M'].T
 
+    def __getitem__(self, idx):
+        pixel = self.train_data[idx]
+        # TODO convert this pixel to a fitting tensor type
+        return torch.Tensor(pixel.astype('float32'))
 
 def check_cuprite():
     from torch.utils.data import DataLoader
 
     batch_size = 16
 
-    cuprite_dset = Cuprite("./data", n_bands=188)
+    cuprite_dset = Cuprite("data", H=250, W=190,n_endmembers=12, n_bands=188)
     train_dataloader = DataLoader(cuprite_dset,
                                   batch_size=batch_size,
                                   shuffle=True)

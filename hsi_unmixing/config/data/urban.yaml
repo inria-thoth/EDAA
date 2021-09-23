@@ -1,9 +1,9 @@
-class_name: Samson
+class_name: Urban
 batch_size: 20
 params:
   path_data_dir: "./data"
-  H: 95
-  W: 95
-  n_endmembers: 3
-  n_bands: 156
+  H: 307
+  W: 307
+  n_endmembers: 6
+  n_bands: 210
 id: "${data.class_name}_bs${data.batch_size}_R${data.params.n_endmembers}_B${data.params.n_bands}"
