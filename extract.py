@@ -11,6 +11,7 @@ from omegaconf import OmegaConf
 
 from hsi_unmixing import data
 from hsi_unmixing import models
+from hsi_unmixing.utils.viz import plot_endmembers
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -33,7 +34,6 @@ def extract(cfg):
     data_class = cfg.data.class_name
     dataset = data.__dict__[data_class](**cfg.data.params)
     img_data = dataset.train_data
-    pdb.set_trace()
     img = torch.Tensor(img_data.astype("float32"))
 
     # Search for checkpoint
@@ -50,10 +50,13 @@ def extract(cfg):
     model_class = ckpt_cfg.model.class_name
     model = models.__dict__[model_class](**cfg.model.params)
 
-    pdb.set_trace()
     # Set model to evaluation mode
-    model.plot_abundances(img, save=True)
-    model.plot_endmembers(save=True)
+    # model.plot_abundances(img, save=True)
+    # model.plot_endmembers(save=True)
+    plot_endmembers(model, dataset)
+    pdb.set_trace()
+
+
 
 
 
