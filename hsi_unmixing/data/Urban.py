@@ -52,6 +52,8 @@ class Urban(BaseDataset):
         self.abundances = labels['A'].T
         # reshape => (R, B)
         self.endmembers = labels['M'].T
+        self.set_labels(labels["cood"])
+        logger.info(f"Label mapping: {self.labels}")
 
     def __getitem__(self, idx):
         pixel = self.train_data[idx]
