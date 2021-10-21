@@ -23,3 +23,10 @@ class BaseDataset(Dataset):
 
     def __len__(self):
         return len(self.train_data)
+
+    def set_labels(self, names, sep="-"):
+        assert len(names) == self.n_endmembers
+        self.labels = {ii: names[ii][0][0].split(sep)[1].lower()
+                        for ii in range(self.n_endmembers)}
+
+

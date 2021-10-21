@@ -27,7 +27,6 @@ class Cuprite(BaseDataset):
 	
 	 # Assertions
         assert self.img_size == (H, W)
-        assert self.n_bands == n_bands
         assert self.n_endmembers == n_endmembers
 
         if n_bands == 188:
@@ -43,14 +42,14 @@ class Cuprite(BaseDataset):
         training_data = sp.loadmat(self.path_img)
         labels = sp.loadmat(self.path_gt)
 
-        pdb.set_trace()
-
         # reshape => (H * W, B)
         self.train_data = training_data['Y'].T
         # reshape => (H * W, R)
         self.abundances = None ## This dataset doesnt has Abundaces
         # reshape => (R, B)
         self.endmembers = labels['M'].T
+        self.set_labels(labels["cood"], sep=" ")
+        logger.info(f"Label mapping: {self.labels}")
 
     def __getitem__(self, idx):
         pixel = self.train_data[idx]

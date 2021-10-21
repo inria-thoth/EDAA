@@ -49,6 +49,12 @@ class JasperRidge(BaseDataset):
         self.abundances = labels['A'].T
         # reshape => (R, B)
         self.endmembers = labels['M'].T
+        self.set_labels(labels["cood"])
+        logger.info(f"Label mapping: {self.labels}")
+
+    def __getitem__(self, idx):
+        pixel = self.train_data[idx]
+        return torch.Tensor(pixel.astype('float32'))
 
 def check_jasper_ridge():
     from torch.utils.data import DataLoader

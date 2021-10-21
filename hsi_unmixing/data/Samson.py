@@ -47,7 +47,14 @@ class Samson(BaseDataset):
         self.abundances = labels["A"].T
         # reshape => (R, B)
         self.endmembers = labels["M"].T
+        # self.mapping = {0: "rock", 1: "tree", 2: "water"}
+        self.set_labels(labels["cood"])
+        logger.info(f"Label mapping: {self.labels}")
 
+    def __getitem__(self, idx):
+        pixel = torch.Tensor(self.train_data[idx])
+        abund = torch.Tensor(self.abundances[idx])
+        return pixel, abund
 
 def check_samson():
     from torch.utils.data import DataLoader
