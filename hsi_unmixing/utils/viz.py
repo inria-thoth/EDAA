@@ -62,7 +62,7 @@ def plot_endmembers(model, dataset):
 
     # Create plot
     fig, ax = plt.subplots(1, R)
-    plt.suptitle("Endmembers comparison")
+    plt.suptitle(f"Endmembers comparison. Mean SAD: {mean_SAD}")
     for ii in range(R):
         ax[ii].plot(preds[ii], c="r")
         ax[ii].plot(gts[pred_2_gt[ii]], c="b")
