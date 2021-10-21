@@ -48,10 +48,11 @@ def extract(cfg):
 
     # Load model checkpoint
     model_class = ckpt_cfg.model.class_name
-    model = models.__dict__[model_class](**cfg.model.params)
+    model = models.__dict__[model_class](**ckpt_cfg.model.params)
 
     # Set model to evaluation mode
-    # model.plot_abundances(img, save=True)
+    model.plot_abundances(img, save=False)
+    pdb.set_trace()
     # model.plot_endmembers(save=True)
     plot_endmembers(model, dataset)
     pdb.set_trace()
