@@ -14,11 +14,20 @@ from .base import BaseModel
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 class SparseCoding_pw(pl.LightningModule):
 
     EPS = 1e-12
 
-    def __init__(self, n_bands, n_endmembers, unrollings, lambd_init=0.1, use_C=False, use_W=False):
+    def __init__(
+        self,
+        n_bands,
+        n_endmembers,
+        unrollings,
+        lambd_init=0.1,
+        use_C=False,
+        use_W=False,
+    ):
 
         super().__init__()
         # Define D, eta, lambda
@@ -34,7 +43,7 @@ class SparseCoding_pw(pl.LightningModule):
 
         self.eta = nn.Parameter(torch.zeros(1))
         self.lambd = nn.Parameter(torch.zeros(1))
-        nn.init.constant_(self.eta, 1.)
+        nn.init.constant_(self.eta, 1.0)
         nn.init.constant_(self.lambd, lambd_init)
 
         if self.use_C:
@@ -51,8 +60,6 @@ class SparseCoding_pw(pl.LightningModule):
         e, _ = torch.symeig(dtd, eigenvectors=False)
         D /= torch.sqrt(torch.max(e))
         return D
-
-
 
     def forward(self, x):
         # Return sparse code and reconstruction
@@ -75,17 +82,19 @@ class SparseCoding_pw(pl.LightningModule):
                 G = self.eta * torch.neg(C.t() @ D)
             else:
                 G = self.eta * torch.neg(D.t() @ D)
-            G.diagonal().add_(1.0) # add identity => (R, R)
+            G.diagonal().add_(1.0)  # add identity => (R, R)
 
         # Unfoldings
         for ii in range(self.unrollings - 1):
             pre_alpha = g + F.linear(alpha, G)
             alpha = F.relu(pre_alpha - self.lambd)
 
-        # Compute reconstruction
-        alpha = alpha / (alpha.sum(1, keepdims=True) + self.EPS)
-        # recon => (b, L)
+        # l1 normalization
         # alpha => (b, R)
+        alpha = alpha / (alpha.sum(1, keepdims=True) + self.EPS)
+
+        # Compute reconstruction
+        # recon => (b, L)
         if self.use_W:
             recon = F.linear(alpha, self.W.weight)
         else:
@@ -110,14 +119,13 @@ class SparseCoding_pw(pl.LightningModule):
             _, code = self(x)
         return code.view(95, 95, -1)
 
-
     def plot_abundances(self, x, save=True):
         # Loop on the last dimensions to plot the abundances (H, W, R)
         abundances = self.extract_abundances(x)
         abundances = abundances.detach().numpy()
-        fig, ax = plt.subplots(1,self.n_endmembers)
+        fig, ax = plt.subplots(1, self.n_endmembers)
         for indx in range(self.n_endmembers):
-            abund = abundances[:,:,indx]
+            abund = abundances[:, :, indx]
             ax[indx].imshow(abund)
             ax[indx].get_xaxis().set_visible(False)
             ax[indx].get_yaxis().set_visible(False)
@@ -130,6 +138,7 @@ def check_SC():
     y_hat, alpha = model(y)
     assert y_hat.shape == (B, L)
     assert alpha.shape == (B, R)
+
 
 if __name__ == "__main__":
     check_SC()
