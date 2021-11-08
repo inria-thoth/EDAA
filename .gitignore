@@ -1,6 +1,9 @@
 # Custom data folder
 /data
 
+# Helper notebook
+/notebooks
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
