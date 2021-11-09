@@ -2,23 +2,22 @@ import os
 import pdb
 import logging
 import time
+import shutil
 import torch
 import torch.nn.functional as F
 from torch.optim import Adam
-import shutil
 
 from torch.utils.data import DataLoader
 import hydra
 from omegaconf import DictConfig, OmegaConf
-
 from hsi_unmixing import models
 from hsi_unmixing import data
-
 from hsi_unmixing.models import SparseCoding_pw
+
+from hsi_unmixing.models.losses import ASC_penalty
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
 
 def train_validate(model, dataloader, optimizer, epochs=300, device='cpu'):
 
@@ -33,7 +32,7 @@ def train_validate(model, dataloader, optimizer, epochs=300, device='cpu'):
             abund = abund.to(device)
             optimizer.zero_grad()
             pixel_hat, codes = model(pixel)
-            loss = torch.sum(F.mse_loss(pixel_hat, pixel)).float()
+            loss = (torch.sum(F.mse_loss(pixel_hat, pixel)).float())# + (ASC_penalty(codes, 0.03).float()) 
             loss.backward()
             optimizer.step()
             training_loss += loss.item()
@@ -47,7 +46,7 @@ def train_validate(model, dataloader, optimizer, epochs=300, device='cpu'):
             pixel = pixel.to(device)
             abund = abund.to(device)
             pixel_hat, codes = model(pixel)
-            loss = torch.sum(F.mse_loss(pixel_hat, pixel)).float()
+            loss = (torch.sum(F.mse_loss(pixel_hat, pixel)).float())# + (ASC_penalty(codes, 0.03).float()) 
             validation_loss += loss.item()
         validation_loss  = validation_loss / len(batch[0]) 
 
