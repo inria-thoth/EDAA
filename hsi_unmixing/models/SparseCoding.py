@@ -211,11 +211,9 @@ class SC_ASC_pw(nn.Module):
         # Unfoldings
         for ii in range(self.unrollings - 1):
             pre_alpha = g + F.linear(alpha, G)
-            penalty = (
-                -self.eta
-                * (lambd + self.gamma * (alpha.sum(1) - 1))
-                * torch.ones_like(g)
-            )
+            factor = -self.eta * (lambd + self.gamma * (alpha.sum(1) - 1))
+            factor = factor.unsqueeze(1)
+            penalty = factor * torch.ones_like(g)
             alpha = F.relu(pre_alpha + penalty)
             lambd = lambd + self.gamma * (alpha.sum(1) - 1)
 
