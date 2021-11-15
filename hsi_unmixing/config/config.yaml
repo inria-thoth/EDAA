@@ -1,6 +1,6 @@
 defaults:
-  - data: samson
-  - model: hsae
+  - data: simulated
+  - model: SC_ASCpw
   - trainer: default_trainer
   - optimizer: adam
 
