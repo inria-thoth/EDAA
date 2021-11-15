@@ -33,7 +33,7 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
             optimizer.zero_grad()
             pixel_hat, codes = model(pixel)
             rec_loss = F.mse_loss(pixel_hat, pixel)
-            asc_loss = torch.sum(ASC_penalty(codes, 0.3))
+            asc_loss = torch.sum(ASC_penalty(codes, 0.03))
             loss = rec_loss + asc_loss
             loss.backward()
             optimizer.step()
@@ -88,7 +88,7 @@ def train(cfg):
     model = SparseCoding_pw(**cfg.model.params)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    epochs = 250
+    epochs = 450
     trained_model = train_model(model, train_dataloader, optimizer, epochs, device)
     evaluate_model(trained_model, valid_dataloader, device)
 
