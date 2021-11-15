@@ -12,14 +12,15 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from hsi_unmixing import data, models
-from hsi_unmixing.models import SparseCoding_pw
-from hsi_unmixing.models.losses import ASC_penalty
+from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
+
+    model = model.to(device)
 
     for epoch in range(1, epochs):
 
@@ -33,7 +34,9 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
             optimizer.zero_grad()
             pixel_hat, codes = model(pixel)
             rec_loss = F.mse_loss(pixel_hat, pixel)
-            asc_loss = torch.sum(ASC_penalty(codes, 0.03))
+            # Use ASC penalty here
+            # asc_loss = torch.sum(ASC_penalty(codes, 0.03))
+            asc_loss = model.ASC(codes)
             loss = rec_loss + asc_loss
             loss.backward()
             optimizer.step()
@@ -41,12 +44,22 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
         training_loss = training_loss / len(batch[0])
 
         if epoch == 1 or epoch % 10 == 0:
-            print("Epoch %3d/%3d, train loss: %5.2f" % (epoch, epochs, training_loss))
+            print(
+                "Epoch %3d/%3d, train loss: %5.2f"
+                % (
+                    epoch,
+                    epochs,
+                    training_loss,
+                )
+            )
 
     return model
 
 
 def evaluate_model(model, dataloader, device="cpu"):
+
+    model = model.to(device)
+
     model.eval()
     validation_loss = 0.0
 
@@ -61,7 +74,8 @@ def evaluate_model(model, dataloader, device="cpu"):
     print(" validation loss: %5.2f" % (validation_loss))
 
 
-dset = data.SimulatedPatches("./data")
+# dset = data.SimulatedPatches("./data")
+dset = data.SimulatedPixels("./data")
 
 
 @hydra.main(config_path="hsi_unmixing/config", config_name="config")
@@ -85,7 +99,7 @@ def train(cfg):
 
     train_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=True)
     valid_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=False)
-    model = SparseCoding_pw(**cfg.model.params)
+    model = SC_ASC_pw(**cfg.model.params)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     epochs = 450
