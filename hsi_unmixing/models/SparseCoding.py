@@ -192,9 +192,10 @@ class SC_ASC_pw(nn.Module):
             g = F.linear(x, self.C.weight.t())
         else:
             g = self.eta * F.linear(x, self.D.weight.t())
-        alpha = F.relu(g + self.eta * self.gamma * torch.ones_like(g))
+        factor = F.relu(self.eta * self.gamma * torch.ones_like(g))
+        alpha = F.relu(g + factor)
         # (b, )
-        lambd = self.gamma * (alpha.sum(1) - 1)
+        lambd = F.relu(self.gamma) * (alpha.sum(1) - 1)
 
         # G trick
         if self.unrollings > 1:
