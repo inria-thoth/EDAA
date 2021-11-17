@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from omegaconf import DictConfig, OmegaConf
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+import numpy as np
 
 from hsi_unmixing import data, models
 from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw
@@ -26,6 +27,9 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
 
         model.train()
         training_loss = 0.0
+        rec_loss_logs = 0.0
+        asc_loss_logs = 0.0
+        all_sums = np.array([])
 
         for batch in dataloader:
             pixel, abund = batch
@@ -33,6 +37,11 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
             abund = abund.to(device)
             optimizer.zero_grad()
             pixel_hat, codes = model(pixel)
+            sum_to_one = codes.sum(1)
+            all_sums = np.append(
+                all_sums,
+                sum_to_one.cpu().detach().numpy(),
+            )
             rec_loss = F.mse_loss(pixel_hat, pixel)
             # Use ASC penalty here
             # asc_loss = torch.sum(ASC_penalty(codes, 0.03))
@@ -41,17 +50,24 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
             loss.backward()
             optimizer.step()
             training_loss += loss.item()
-        training_loss = training_loss / len(batch[0])
+            rec_loss_logs += rec_loss.item()
+            asc_loss_logs += asc_loss.item()
+        training_loss /= len(batch[0])
+        rec_loss_logs /= len(batch[0])
+        asc_loss_logs /= len(batch[0])
 
-        if epoch == 1 or epoch % 10 == 0:
-            print(
-                "Epoch %3d/%3d, train loss: %5.2f"
-                % (
-                    epoch,
-                    epochs,
-                    training_loss,
-                )
-            )
+        # if epoch == 1 or epoch % 10 == 0:
+        nu = torch.clip(model.ASC.nu, model.ASC.EPS, 1.0)
+        avg_sum = np.mean(all_sums)
+        std_sum = np.std(all_sums)
+
+        print(
+            f"Epoch {epoch}\t Loss: {training_loss:e}\t "
+            f"Rec: {rec_loss_logs:e}\t ASC: {asc_loss_logs:e}\t"
+            f"Clipped Nu: {nu.item():e}\t Eta: {model.eta.item():e}\t"
+            f"Gamma: {model.gamma.item():e}\t AVG: {avg_sum:e}\t"
+            f"STD: {std_sum:e}\t",
+        )
 
     return model
 
@@ -100,10 +116,16 @@ def train(cfg):
     train_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=True)
     valid_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=False)
     model = SC_ASC_pw(**cfg.model.params)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     epochs = 450
-    trained_model = train_model(model, train_dataloader, optimizer, epochs, device)
+    trained_model = train_model(
+        model,
+        train_dataloader,
+        optimizer,
+        epochs,
+        device,
+    )
     evaluate_model(trained_model, valid_dataloader, device)
 
 
