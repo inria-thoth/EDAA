@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 
 from hsi_unmixing import data, models
-from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw
+from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw, EDA
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -30,6 +30,7 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
         rec_loss_logs = 0.0
         asc_loss_logs = 0.0
         all_sums = np.array([])
+        val_loss = 0.0
 
         for batch in dataloader:
             pixel, abund = batch
@@ -52,9 +53,12 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
             training_loss += loss.item()
             rec_loss_logs += rec_loss.item()
             asc_loss_logs += asc_loss.item()
+            with torch.no_grad():
+                val_loss += F.mse_loss(codes, abund).item()
         training_loss /= len(batch[0])
         rec_loss_logs /= len(batch[0])
         asc_loss_logs /= len(batch[0])
+        val_loss /= len(batch[0])
 
         # if epoch == 1 or epoch % 10 == 0:
         nu = torch.clip(model.ASC.nu, model.ASC.EPS, 1.0)
@@ -66,7 +70,7 @@ def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
             f"Rec: {rec_loss_logs:e}\t ASC: {asc_loss_logs:e}\t"
             f"Clipped Nu: {nu.item():e}\t Eta: {model.eta.item():e}\t"
             f"Gamma: {model.gamma.item():e}\t AVG: {avg_sum:e}\t"
-            f"STD: {std_sum:e}\t",
+            f"STD: {std_sum:e}\t Val Loss: {val_loss:e}\t",
         )
 
     return model
@@ -91,7 +95,8 @@ def evaluate_model(model, dataloader, device="cpu"):
 
 
 # dset = data.SimulatedPatches("./data")
-dset = data.SimulatedPixels("./data")
+# dset = data.SimulatedPixels("./data")
+dset = data.SimulatedDataCubes()
 
 
 @hydra.main(config_path="hsi_unmixing/config", config_name="config")
@@ -115,7 +120,7 @@ def train(cfg):
 
     train_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=True)
     valid_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=False)
-    model = SC_ASC_pw(**cfg.model.params)
+    model = EDA(**cfg.model.params)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     epochs = 450
