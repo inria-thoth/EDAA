@@ -7,6 +7,8 @@ import torch
 
 from .base import BaseDataset
 
+from torch.utils.data import Dataset
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -83,6 +85,44 @@ class SimulatedPatches(BaseSimulated):
         return len(self.X)
 
 
+class SimulatedDataCubes(Dataset):
+
+    path_to_data = os.path.join("data", "SimulatedDataCubes", "data.mat")
+
+    def __init__(self):
+        # data composition
+        # E => endmembers
+        # Y2 => HSI
+        # X2 => abundances
+        data = sio.loadmat(self.path_to_data)
+
+        # NOTE idea => Reshape from arrays
+        self.E = torch.Tensor(data["E"])
+        self.Y = torch.Tensor(data["Y2"])
+        self.X = torch.Tensor(data["X2"])
+
+        C, m = self.E.shape
+
+        H, W, _ = self.Y.shape
+
+        assert self.X.shape[0] == H
+        assert self.X.shape[1] == W
+
+        assert self.Y.shape[-1] == C
+        assert self.X.shape[-1] == m
+
+        self.Y = self.Y.reshape(H * W, C)
+        self.X = self.X.reshape(H * W, m)
+
+        assert len(self.X) == len(self.Y)
+
+    def __getitem__(self, idx):
+        return self.Y[idx], self.X[idx]
+
+    def __len__(self):
+        return len(self.X)
+
+
 def check_simulated_pixels():
     from torch.utils.data import DataLoader
 
@@ -119,6 +159,25 @@ def check_simulated_patches():
     print("Tensors shapes as expected...")
 
 
+def check_simulated_data_cubes():
+    from torch.utils.data import DataLoader
+
+    print("Testing simulated data cubes")
+    batch_size = 32
+
+    dset = SimulatedDataCubes()
+    dataloader = DataLoader(dset, batch_size=batch_size, shuffle=True)
+
+    batch = next(iter(dataloader))
+    y, x = batch
+
+    assert y.shape[-1] == 224
+    assert x.shape[-1] == 6
+
+    print("Tensors shapes as expected")
+
+
 if __name__ == "__main__":
-    check_simulated_pixels()
-    check_simulated_patches()
+    # check_simulated_pixels()
+    # check_simulated_patches()
+    check_simulated_data_cubes()
