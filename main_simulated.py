@@ -13,15 +13,17 @@ from torch.utils.data import DataLoader
 import numpy as np
 
 from hsi_unmixing import data, models
-from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw, EDA
+
+# from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw, EDA
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def train_model(model, dataloader, optimizer, device="cpu"):
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = model.to(device)
+
+def train_model(model, dataloader, optimizer):
 
     model.train()
 
@@ -44,24 +46,31 @@ def train_model(model, dataloader, optimizer, device="cpu"):
     return model
 
 
-def evaluate_model(model, dataloader, device="cpu"):
-
-    model = model.to(device)
+def evaluate_model(model, dataloader):
 
     model.eval()
-    validation_loss = 0.0
 
-    for idx, batch in enumerate(dataloader):
-        pixel, abund = batch
-        pixel = pixel.to(device)
-        abund = abund.to(device)
-        pixel_hat, codes = model(pixel)
-        loss = F.mse_loss(codes, abund)
-        validation_loss += loss.item()
-    print(" validation loss: %5.2f" % (validation_loss))
+    rmse = 0.0
+
+    with torch.no_grad():
+        for batch in dataloader:
+            pixel, abund = batch
+            pixel = pixel.to(device)
+            abund = abund.to(device)
+            pixel_hat, codes = model(pixel)
+            # loss = F.mse_loss(codes, abund)
+            loss = aRMSE(codes, abund)
+            rmse += loss.item()
+        print(f"aRMSE: {rmse:.4f}")
+
+    print(*filter(lambda p: p.requires_grad, model.parameters()))
 
 
 dset = data.SimulatedDataCubes()
+
+
+def aRMSE(a_gt, a_hat):
+    return 100 * torch.sqrt(((a_gt - a_hat) ** 2).mean(1)).mean(0)
 
 
 @hydra.main(config_path="hsi_unmixing/config", config_name="config")
@@ -85,19 +94,22 @@ def train(cfg):
 
     train_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=True)
     valid_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=False)
-    model = EDA(**cfg.model.params)
+    model = models.__dict__[cfg.model.class_name](**cfg.model.params)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
 
-    epochs = 450
+    # Fix endmembers as ground truth
+    model.D.weight.data = dset.E
+    model.D.weight.requires_grad = False
+
+    epochs = 50
     for ee in range(epochs):
         trained_model = train_model(
             model,
             train_dataloader,
             optimizer,
-            device,
         )
-        evaluate_model(trained_model, valid_dataloader, device)
+        evaluate_model(trained_model, valid_dataloader)
 
 
 if __name__ == "__main__":

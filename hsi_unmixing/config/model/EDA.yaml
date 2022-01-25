@@ -4,5 +4,5 @@ params:
   n_endmembers: ${data.params.n_endmembers}
   n_bands: ${data.params.n_bands}
   unrollings: 5
-  eta_init: 1.0
-  activation: "softmax"
+  init_eta: 1.0
+  init_fn: "softmax"
