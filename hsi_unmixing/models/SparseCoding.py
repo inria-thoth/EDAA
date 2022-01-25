@@ -229,62 +229,62 @@ class SC_ASC_pw(nn.Module):
         return recon, alpha
 
 
-# class EDA(nn.Module):
-#     def __init__(
-#         self,
-#         n_bands,
-#         n_endmembers,
-#         unrollings=12,
-#         activation="uniform",
-#         eta_init=1.0,
-#     ):
-#         super().__init__()
-#         self.n_bands = n_bands
-#         self.n_endmembers = n_endmembers
-#         self.unrollings = unrollings
+class EDA(nn.Module):
+    def __init__(
+        self,
+        n_bands,
+        n_endmembers,
+        unrollings=12,
+        activation="uniform",
+        eta_init=1.0,
+    ):
+        super().__init__()
+        self.n_bands = n_bands
+        self.n_endmembers = n_endmembers
+        self.unrollings = unrollings
 
-#         self.activation = activation
+        self.activation = activation
 
-#         self.eta = nn.Parameter(eta_init * torch.ones(1))
+        self.eta = nn.Parameter(eta_init * torch.ones(1))
 
-#         self.D = nn.Linear(self.n_bands, self.n_endmembers, bias=False)
+        self.D = nn.Linear(self.n_bands, self.n_endmembers, bias=False)
 
-#     def forward(self, y):
+    def forward(self, y):
 
-#         device = y.device
+        device = y.device
 
-#         b, _ = y.shape
+        b, _ = y.shape
 
-#         if self.activation == "uniform":
-#             alpha = torch.ones(b, self.n_endmembers) / self.n_endmembers
-#             alpha = alpha.to(device)
+        if self.activation == "uniform":
+            alpha = torch.ones(b, self.n_endmembers) / self.n_endmembers
+            alpha = alpha.to(device)
 
-#         elif self.activation == "softmax":
-#             alpha = F.softmax(torch.rand(b, self.n_endmembers), dim=1)
-#             alpha = alpha.to(device)
+        elif self.activation == "softmax":
+            alpha = F.softmax(torch.rand(b, self.n_endmembers), dim=1)
+            alpha = alpha.to(device)
 
-#         for kk in range(self.unrollings):
-#             alpha = self.update(
-#                 alpha,
-#                 -self.eta * self.grad_f(alpha, y),
-#             )
+        for kk in range(self.unrollings):
+            alpha = self.update(
+                alpha,
+                -self.eta * self.grad_f(alpha, y),
+            )
 
-#         y_hat = F.linear(alpha, self.D.weight.t())
+        y_hat = F.linear(alpha, self.D.weight.t())
 
-#         return y_hat, alpha
+        return y_hat, alpha
 
-#     def f(self, alpha, y):
-#         return 0.5 * torch.mean((y - self.D(alpha)) ** 2)
+    def f(self, alpha, y):
+        return 0.5 * torch.mean((y - self.D(alpha)) ** 2)
 
-#     def grad_f(self, alpha, y):
-#         D = self.D.weight
-#         m = alpha.shape[1]
-#         residual = y - F.linear(alpha, D.t())
-#         return F.linear(residual, D) / m
+    def grad_f(self, alpha, y):
+        D = self.D.weight
+        m = alpha.shape[1]
+        residual = y - F.linear(alpha, D.t())
+        return F.linear(residual, D) / m
 
-#     @staticmethod
-#     def update(a, b):
-#         return (a * torch.exp(b)) / torch.sum(a * torch.exp(b))
+    @staticmethod
+    def update(a, b):
+        return (a * torch.exp(b)) / torch.sum(a * torch.exp(b))
 
 
 def check_SC():
@@ -296,24 +296,23 @@ def check_SC():
     assert alpha.shape == (B, R)
 
 
-# Check updates compared to numpy
-# def check_updates():
-#     pass
+# TODO Check updates compared to numpy
+def check_updates():
+    pass
 
 
-# def check_EDA():
-#     B, L, R, K = 10, 224, 6, 12
-#     # act = "uniform"
-#     act = "softmax"
-#     y = torch.randn(B, L)
-#     model = EDA(L, R, K, act)
-#     y_hat, alpha = model(y)
-#     assert y_hat.shape == (B, L)
-#     assert alpha.shape == (B, R)
+def check_EDA():
+    B, L, R, K = 10, 224, 6, 12
+    # act = "uniform"
+    act = "softmax"
+    y = torch.randn(B, L)
+    model = EDA(L, R, K, act)
+    y_hat, alpha = model(y)
+    assert y_hat.shape == (B, L)
+    assert alpha.shape == (B, R)
 
 
 if __name__ == "__main__":
     # check_SC()
-    pass
     # check_updates()
-    # check_EDA()
+    check_EDA()
