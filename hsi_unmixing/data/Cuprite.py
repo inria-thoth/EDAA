@@ -13,5 +13,11 @@ class CupriteDataset(HSI):
 
 
 if __name__ == "__main__":
+    import matplotlib
+
+    matplotlib.use("TkAgg")
+
     hsi = CupriteDataset()
     print(hsi)
+    # hsi.plot_endmembers()
+    hsi.plot_abundances(grid=(3, 4))

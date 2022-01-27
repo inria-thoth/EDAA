@@ -12,6 +12,13 @@ class APEX4Dataset(HSI):
         super().__init__("APEX4.mat", data_path)
 
 
+class APEX6Dataset(HSI):
+    def __init__(self, data_path: str = "./data"):
+        super().__init__("APEX6.mat", data_path)
+
+
 if __name__ == "__main__":
-    hsi = APEX4Dataset()
+    hsi = APEX6Dataset()
     print(hsi)
+    hsi.plot_endmembers(normalize=True)
+    # hsi.plot_abundances(grid=(2, 3))
