@@ -9,7 +9,7 @@ import scipy.sparse as sp
 import spams
 import matplotlib.pyplot as plt
 
-from .noise_models import AdditiveWhiteGaussianNoise as AWGN
+from hsi_unmixing.data.noise_models import AdditiveWhiteGaussianNoise as AWGN
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -53,7 +53,7 @@ class HSI:
 
         # Normalize Y
         num = self.Y - self.Y.min()
-        denom = self.EPS + self.Y.max() - self.Y.min()
+        denom = self.EPS + (self.Y.max() - self.Y.min())
         self.Y = num / denom
 
         try:
