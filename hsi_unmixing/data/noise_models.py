@@ -8,18 +8,11 @@ logger.setLevel(logging.DEBUG)
 
 
 class AdditiveWhiteGaussianNoise:
-    def __init__(self, seed=0):
-        self.seed = seed
-
+    def __init__(self):
         self.sigmas = None
         self.SNR = None
         self.L = None
         self.N = None
-
-    def __repr__(self):
-        name = type(self).__name__
-        msg = f"{name}_seed{self.seed}"
-        return msg
 
     def fit(self, Y, SNR: float):
         """
@@ -47,23 +40,23 @@ class AdditiveWhiteGaussianNoise:
         logging.debug(f"Final sigmas value: {sigmas}")
         self.sigmas = sigmas
 
-    def transform(self, Y):
+    def transform(self, Y, seed=0):
         """
         Add White Gaussian Noise to the flattened input HSI Y
         """
         assert self.sigmas is not None, "Must be fitted first"
         assert (self.L, self.N) == Y.shape
         # Fix random seed
-        generator = np.random.RandomState(seed=self.seed)
+        generator = np.random.RandomState(seed=seed)
         # Noise generation
         N = np.diag(self.sigmas) @ generator.randn(self.L, self.N)
         # Additive Noise
         return Y + N
 
-    def fit_transform(self, Y, SNR):
+    def fit_transform(self, Y, SNR, seed=0):
         """
         Combine `fit` and `transform` methods.
         See above for their respective usage.
         """
         self.fit(Y, SNR)
-        return self.transform(Y)
+        return self.transform(Y, seed=seed)
