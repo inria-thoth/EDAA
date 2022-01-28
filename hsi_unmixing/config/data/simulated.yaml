@@ -1,9 +1,0 @@
-class_name: Simulated
-batch_size: 20
-params:
-  path_data_dir: "./data"
-  H: 200
-  W: 200
-  n_endmembers: 5
-  n_bands: 224
-id: "${data.class_name}_bs${data.batch_size}_R${data.params.n_endmembers}_B${data.params.n_bands}"

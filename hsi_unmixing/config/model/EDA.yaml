@@ -1,8 +1,0 @@
-class_name: EDA
-id: "${model.class_name}"
-params:
-  n_endmembers: ${data.params.n_endmembers}
-  n_bands: ${data.params.n_bands}
-  unrollings: 5
-  eta_init: 1.0
-  activation: "softmax"
