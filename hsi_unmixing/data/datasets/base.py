@@ -192,6 +192,7 @@ class HSI:
 
     def plot_hsi(
         self,
+        Y0=None,
         SNR=None,
         channels=None,
         seed=0,
@@ -207,7 +208,11 @@ class HSI:
             # Reorder the channels
             channels = np.sort(channels)
 
-        Y = np.copy(self.Y)
+        if Y0 is None:
+            Y = np.copy(self.Y)
+        else:
+            assert Y0.shape == (self.L, self.N)
+            Y = np.copy(Y0)
         if SNR is not None:
             # Add noise
             Y = AWGN().fit_transform(Y, SNR, seed=seed)
