@@ -14,7 +14,7 @@ class DecompSimplex:
     def __init__(self):
         pass
 
-    def apply(
+    def solve(
         self,
         Y,
         E,

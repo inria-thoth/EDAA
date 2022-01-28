@@ -35,7 +35,7 @@ class FCLS:
         else:
             return matrix(A, A.shape, "d")
 
-    def apply(self, Y, E):
+    def solve(self, Y, E):
         """
         Performs fully constrained least squares of each pixel in M
         using the endmember signatures of U. Fully constrained least squares
@@ -112,9 +112,9 @@ class FCLS:
 if __name__ == "__main__":
     from hsi_unmixing.data.datasets.base import HSI
 
-    hsi = HSI("Samson.mat")
+    hsi = HSI("JasperRidge.mat")
     hsi.plot_abundances(transpose=True)
 
     solver = FCLS()
-    A0 = solver.apply(hsi.Y, hsi.E)
+    A0 = solver.solve(hsi.Y, hsi.E)
     hsi.plot_abundances(transpose=True, A0=A0)

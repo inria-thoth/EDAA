@@ -7,6 +7,7 @@ import hsi_unmixing.models.supervised as setters
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+import torch
 from hsi_unmixing import EPS
 from hsi_unmixing.data import normalizers
 from hsi_unmixing.data.noise_models import AdditiveWhiteGaussianNoise as AWGN
@@ -78,6 +79,11 @@ class HSI:
         # Endmembers Non-negative Constraint
         assert np.all(self.E >= -EPS)
 
+        # Convert to Tensors
+        self.Yt = torch.Tensor(self.Y)
+        self.Et = torch.Tensor(self.E)
+        self.At = torch.Tensor(self.A)
+
     def __repr__(self):
         msg = f"HSI => {self.shortname}\n"
         msg += "---------------------\n"
@@ -92,17 +98,27 @@ class HSI:
         Compute GT abundances based on GT endmembers using decompSimplex
         """
         logging.info("Computing GT abundances...")
-        # Yf = np.asfortranarray(self.Y, dtype=self.dtype)
-        # Ef = np.asfortranarray(self.E, dtype=self.dtype)
 
         tic = time.time()
-        # W = spams.decompSimplex(Yf, Ef, computeXtX=True)
-        self.A = setters.__dict__[setter]().apply(self.Y, self.E)
+        solver = setters.__dict__[setter]()
+        self.A = solver.solve(self.Y, self.E)
         tac = time.time()
 
         logging.info(f"Computing GT abundances took {tac - tic:.2f}s")
 
-        # self.A = sp.csr_matrix.toarray(W)
+    def __call__(self, asTensor=False):
+
+        if asTensor:
+            Y = self.Yt.clone()
+            E = self.Et.clone()
+            A = self.At.clone()
+
+        else:
+            Y = np.copy(self.Y)
+            E = np.copy(self.E)
+            A = np.copy(self.A)
+
+        return (Y, E, A)
 
     def plot_endmembers(self, E0=None, normalize=False):
         """
