@@ -18,7 +18,8 @@ class APEX6Dataset(HSI):
 
 
 if __name__ == "__main__":
-    hsi = APEX6Dataset()
+    hsi = APEX4Dataset()
     print(hsi)
-    hsi.plot_endmembers(normalize=True)
+    # hsi.plot_endmembers(normalize=True)
+    hsi.plot_hsi(SNR=10)
     # hsi.plot_abundances(grid=(2, 3))

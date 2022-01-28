@@ -9,6 +9,8 @@ import scipy.sparse as sp
 import spams
 import matplotlib.pyplot as plt
 
+from .noise_models import AdditiveWhiteGaussianNoise as AWGN
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -159,4 +161,39 @@ class HSI:
                     break
 
         plt.suptitle(title)
+        plt.show()
+
+    def plot_hsi(
+        self,
+        SNR=None,
+        channels=None,
+        seed=0,
+        sort_channels=True,
+    ):
+
+        if channels is None:
+            # Generate 3 random channels
+            generator = np.random.RandomState(seed=seed)
+            channels = generator.randint(0, self.L - 1, size=3)
+        assert len(channels) == 3
+        if sort_channels:
+            # Reorder the channels
+            channels = np.sort(channels)
+
+        Y = np.copy(self.Y)
+        if SNR is not None:
+            # Add noise
+            Noise = AWGN(seed=seed)
+            Y = Noise.fit_transform(Y, SNR)
+
+        # Plot the image
+        img = Y.reshape(self.L, self.H, self.W)
+        img = img.transpose(1, 2, 0)
+
+        colors = {key: value for (key, value) in zip("RGB", channels)}
+        title = f"{self.shortname} Observation [SNR={SNR}dB]\n"
+        title += "Colors: ("
+        title += ", ".join([f"{k}:{v}" for (k, v) in colors.items()]) + ")\n"
+        plt.title(title)
+        plt.imshow(img[:, :, channels])
         plt.show()
