@@ -105,7 +105,7 @@ class FCLS:
             sol = solvers.qp(Q, q.T, A, b, Aeq, beq, None, None)["x"]
             X[n1] = np.array(sol).squeeze()
         tac = time.time()
-        logging.info(f"{self.__class__.__name__} took {tac - tic:.2f}s")
+        logger.info(f"{self.__class__.__name__} took {tac - tic:.2f}s")
         return X.T
 
 

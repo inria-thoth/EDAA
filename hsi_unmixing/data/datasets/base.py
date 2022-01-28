@@ -97,14 +97,14 @@ class HSI:
         """
         Compute GT abundances based on GT endmembers using decompSimplex
         """
-        logging.info("Computing GT abundances...")
+        logger.info("Computing GT abundances...")
 
         tic = time.time()
         solver = setters.__dict__[setter]()
         self.A = solver.solve(self.Y, self.E)
         tac = time.time()
 
-        logging.info(f"Computing GT abundances took {tac - tic:.2f}s")
+        logger.info(f"Computing GT abundances took {tac - tic:.2f}s")
 
     def __call__(self, asTensor=False):
 
