@@ -1,11 +1,20 @@
 import logging
 import pdb
 
+import numpy as np
 import numpy.linalg as LA
 from hsi_unmixing import EPS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class RawInput:
+    def __init__(self, dtype=np.float64):
+        self.dtype = dtype
+
+    def transform(self, Y):
+        return Y.astype(self.dtype)
 
 
 class GlobalMinMax:
