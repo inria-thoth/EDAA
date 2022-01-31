@@ -34,7 +34,7 @@ class BaseAligner:
         res = self.transform(E)
 
         tac = time.time()
-        logging.info(f"{self} took {tac - tic:.2f}s...")
+        logger.info(f"{self} took {tac - tic:.2f}s...")
 
         return res
 
