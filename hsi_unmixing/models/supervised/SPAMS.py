@@ -14,6 +14,10 @@ class DecompSimplex:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}"
+        return msg
+
     def solve(
         self,
         Y,
@@ -54,6 +58,6 @@ class DecompSimplex:
 
         A = sp.csr_matrix.toarray(W)
         tac = time.time()
-        logger.info(f"{self.__class__.__name__} took {tac - tic:.2f}s")
+        logger.info(f"{self} took {tac - tic:.2f}s")
 
         return A

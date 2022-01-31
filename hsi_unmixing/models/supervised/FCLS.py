@@ -13,6 +13,10 @@ class FCLS:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}"
+        return msg
+
     @staticmethod
     def _numpy_None_vstack(A1, A2):
         if A1 is None:
@@ -105,7 +109,7 @@ class FCLS:
             sol = solvers.qp(Q, q.T, A, b, Aeq, beq, None, None)["x"]
             X[n1] = np.array(sol).squeeze()
         tac = time.time()
-        logger.info(f"{self.__class__.__name__} took {tac - tic:.2f}s")
+        logger.info(f"{self} took {tac - tic:.2f}s")
         return X.T
 
 

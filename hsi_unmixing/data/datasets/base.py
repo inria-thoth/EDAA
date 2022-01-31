@@ -229,6 +229,53 @@ class HSI:
         plt.imshow(img[:, :, channels])
         plt.show()
 
+    def plot_contributions(
+        self,
+        X0,
+        grid=None,
+        transpose=False,
+        method=None,
+    ):
+        """
+        Display pixels contribution maps
+        """
+        if grid is None:
+            nrows, ncols = (1, self.p)
+        else:
+            assert len(grid) == 2
+            nrows, ncols = grid
+            assert nrows * ncols >= self.p
+
+        title = f"{self.shortname} Pixels Contributions using {method}"
+        assert self.A.shape == X0.shape
+        X = np.copy(X0)
+        X = X.reshape(self.p, self.H, self.W)
+        if transpose:
+            X = X.transpose(0, 2, 1)
+
+        fig, ax = plt.subplots(
+            nrows=nrows,
+            ncols=ncols,
+            figsize=(12, 4 * nrows),
+        )
+        kk = 0
+        for ii in range(nrows):
+            for jj in range(ncols):
+                if nrows == 1:
+                    curr_ax = ax[jj]
+                else:
+                    curr_ax = ax[ii, jj]
+                curr_ax.imshow(X[kk, :, :], cmap="inferno")
+                curr_ax.set_title(f"{self.labels[kk]}")
+                curr_ax.axis("off")
+                kk += 1
+
+                if kk == self.p:
+                    break
+
+        plt.suptitle(title)
+        plt.show()
+
 
 if __name__ == "__main__":
     hsi = HSI(
@@ -237,4 +284,5 @@ if __name__ == "__main__":
         setter="DecompSimplex",
     )
     print(hsi)
-    hsi.plot_abundances()
+    # hsi.plot_abundances()
+    hsi.plot_contributions(hsi.A)
