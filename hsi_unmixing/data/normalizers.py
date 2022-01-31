@@ -45,6 +45,7 @@ class PixelwiseNorm:
 
     def transform(self, Y):
         assert len(Y.shape) == 2
+        # Expect L (# HSI channels) x N (# HSI pixels)
         assert Y.shape[0] < Y.shape[1]
         return Y / LA.norm(Y, axis=1, ord=self.order, keepdims=True)
 
