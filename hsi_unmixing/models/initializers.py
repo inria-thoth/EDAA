@@ -16,7 +16,7 @@ class BaseInit:
         return NotImplementedError
 
     def __repr__(self):
-        msg = "f{self.__class__.__name__}_seed{self.seed}"
+        msg = f"{self.__class__.__name__}_seed{self.seed}"
         return msg
 
 
