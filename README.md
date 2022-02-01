@@ -1,9 +1,27 @@
-# hsi_unmixing
-
-Implementation of HSI unmixing methods
+# Hyperspectral Image Unmixing (HSU)
 
 ---
 
-We start by reproducing [HSAE](https://github.com/dv-fenix/HyperspecAE/blob/main/src/train.py).
+## Introduction
 
-We then implement the [CNNAEU](https://ieeexplore.ieee.org/abstract/document/8900297) paper.
+This repository implements various unmixing methods (supervised and blind) on different datasets.
+
+---
+
+## Installation
+
+We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
+
+```shell
+conda create --name hsu python=3.8
+```
+
+```shell
+pip install -r requirements.txt
+```
+
+---
+
+## Getting started
+
+To be done.
