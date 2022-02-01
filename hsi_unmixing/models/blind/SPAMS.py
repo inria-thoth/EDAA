@@ -12,7 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 class ArchetypalAnalysis:
     def __init__(self):
-        self.Xmap = None
+        pass
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -81,8 +81,34 @@ class ArchetypalAnalysis:
 
         self.E = Ehat
         self.A = sp.csc_matrix.toarray(Asparse)
-        self.Xmap = sp.csc_matrix.toarray(Xsparse)
+        self.Xmap = sp.csc_matrix.toarray(Xsparse).T
         tac = time.time()
 
         logger.info(f"{self} took {tac - tic:.2f}s")
         return self.E, self.A
+
+
+if __name__ == "__main__":
+    from hsi_unmixing.data.datasets.base import HSI
+    from hsi_unmixing.models.aligners import GreedyAligner as GA
+    from hsi_unmixing.models.initializers import VCA
+
+    hsi = HSI("JasperRidge.mat")
+
+    vca = VCA()
+    Einit = vca.init_like(hsi)
+    solver = ArchetypalAnalysis()
+    E0, A0 = solver.solve(hsi.Y, hsi.p, E0=Einit)
+
+    aligner = GA(hsi, "MeanAbsoluteError")
+    Ehat = aligner.fit_transform(E0)
+    Ahat = aligner.transform_abundances(A0)
+
+    # hsi.plot_abundances(transpose=True)
+    # hsi.plot_abundances(transpose=True, A0=Ahat)
+
+    # hsi.plot_endmembers()
+    # hsi.plot_endmembers(E0=E0)
+
+    Xhat = aligner.transform_abundances(solver.Xmap)
+    hsi.plot_contributions(transpose=True, X0=Xhat, method=solver)
