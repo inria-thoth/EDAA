@@ -108,7 +108,7 @@ if __name__ == "__main__":
     # hsi.plot_abundances(transpose=True, A0=Ahat)
 
     # hsi.plot_endmembers()
-    # hsi.plot_endmembers(E0=E0)
+    # hsi.plot_endmembers(E0=Ehat)
 
     Xhat = aligner.transform_abundances(solver.Xmap)
     hsi.plot_contributions(transpose=True, X0=Xhat, method=solver)
