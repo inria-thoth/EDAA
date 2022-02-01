@@ -8,13 +8,13 @@ logger.setLevel(logging.DEBUG)
 
 
 class SimulatedDataCubesNoPurePixelsDataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("SimulatedDataCubesNoPurePixels.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("SimulatedDataCubesNoPurePixels.mat", **kwargs)
 
 
 class SimulatedDataCubesNoPurePixelsHardDataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("SimulatedDataCubesNoPurePixelsHard.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("SimulatedDataCubesNoPurePixelsHard.mat", **kwargs)
 
 
 if __name__ == "__main__":

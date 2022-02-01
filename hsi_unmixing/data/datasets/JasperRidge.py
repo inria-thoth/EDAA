@@ -8,8 +8,8 @@ logger.setLevel(logging.DEBUG)
 
 
 class JasperRidgeDataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("JasperRidge.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("JasperRidge.mat", **kwargs)
 
 
 if __name__ == "__main__":

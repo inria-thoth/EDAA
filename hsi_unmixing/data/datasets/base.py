@@ -33,12 +33,11 @@ class HSI:
         logger.debug(f"Data keys: {data.keys()}")
 
         for key in filter(
-            lambda s: not s.startswith("__"),
+            lambda k: not k.startswith("__"),
             data.keys(),
         ):
             self.__setattr__(key, data[key])
 
-        # self.dtype = np.float64
         # Data format check
         self.H = self.H.item()
         self.W = self.W.item()
@@ -47,7 +46,6 @@ class HSI:
 
         self.N = self.H * self.W
 
-        # pdb.set_trace()
         assert self.E.shape == (self.L, self.p)
         assert self.Y.shape == (self.L, self.N)
 
@@ -285,4 +283,4 @@ if __name__ == "__main__":
     )
     print(hsi)
     # hsi.plot_abundances()
-    hsi.plot_contributions(hsi.A)
+    # hsi.plot_contributions(hsi.A)

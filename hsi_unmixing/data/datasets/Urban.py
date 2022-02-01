@@ -8,18 +8,18 @@ logger.setLevel(logging.DEBUG)
 
 
 class Urban4Dataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("Urban4.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("Urban4.mat", **kwargs)
 
 
 class Urban5Dataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("Urban5.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("Urban5.mat", **kwargs)
 
 
 class Urban6Dataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("Urban6.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("Urban6.mat", **kwargs)
 
 
 if __name__ == "__main__":

@@ -8,13 +8,13 @@ logger.setLevel(logging.DEBUG)
 
 
 class APEX4Dataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("APEX4.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("APEX4.mat", **kwargs)
 
 
 class APEX6Dataset(HSI):
-    def __init__(self, data_path: str = "./data"):
-        super().__init__("APEX6.mat", data_path)
+    def __init__(self, **kwargs):
+        super().__init__("APEX6.mat", **kwargs)
 
 
 if __name__ == "__main__":
