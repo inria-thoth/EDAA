@@ -9,45 +9,57 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class RawInput:
-    def __init__(self, dtype=np.float64):
+class BaseNormalizer:
+    def __init__(self, epsilon=EPS, dtype=np.float64):
+        self.epsilon = epsilon
         self.dtype = dtype
+
+    def transform(self, Y):
+        raise NotImplementedError
+
+
+class RawInput(BaseNormalizer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def transform(self, Y):
         return Y.astype(self.dtype)
 
 
-class GlobalMinMax:
-    def __init__(self, epsilon=EPS):
-        self.epsilon = epsilon
+class GlobalMinMax(BaseNormalizer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def transform(self, Y):
         num = Y - Y.min()
         denom = (Y.max() - Y.min()) + self.epsilon
-        return num / denom
+        return (num / denom).astype(self.dtype)
 
 
-class BandwiseMinMax:
-    def __init__(self, epsilon=EPS):
-        self.epsilon = epsilon
+class BandwiseMinMax(BaseNormalizer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def transform(self, Y):
         minValuePerBand = Y.min(axis=1, keepdims=True)
         maxValuePerBand = Y.max(axis=1, keepdims=True)
         num = Y - minValuePerBand
         denom = (maxValuePerBand - minValuePerBand) + self.epsilon
-        return num / denom
+        return (num / denom).astype(self.dtype)
 
 
-class PixelwiseNorm:
-    def __init__(self, order):
+class PixelwiseNorm(BaseNormalizer):
+    def __init__(self, order, **kwargs):
+        super().__init__(**kwargs)
         self.order = order
 
     def transform(self, Y):
         assert len(Y.shape) == 2
         # Expect L (# HSI channels) x N (# HSI pixels)
         assert Y.shape[0] < Y.shape[1]
-        return Y / LA.norm(Y, axis=1, ord=self.order, keepdims=True)
+        num = Y
+        denom = LA.norm(Y, axis=1, ord=self.order, keepdims=True)
+        return (num / denom).astype(self.dtype)
 
 
 class PixelwiseL1Norm(PixelwiseNorm):
