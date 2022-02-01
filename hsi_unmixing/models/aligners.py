@@ -27,6 +27,13 @@ class BaseAligner:
 
         return E @ self.P
 
+    def transform_abundances(self, A):
+        assert self.P is not None, "Must be fitted first"
+        assert A.shape[0] == self.P.shape[0]
+        assert A.shape[0] == self.P.shape[1]
+
+        return self.P.T @ A
+
     def fit_transform(self, E):
         tic = time.time()
 
