@@ -12,7 +12,7 @@ class BaseInit:
     def __init__(self):
         self.seed = None
 
-    def init_like(self, hsi):
+    def init_like(self, hsi, seed=0):
         return NotImplementedError
 
     def __repr__(self):
@@ -24,7 +24,7 @@ class TrueEndmembers(BaseInit):
     def __init__(self):
         super().__init__()
 
-    def init_like(self, hsi):
+    def init_like(self, hsi, **kwargs):
         return hsi.E
 
 
@@ -106,10 +106,10 @@ class VCA(BaseInit):
 
             SNR = self.estimate_snr(Y, y_m, x_p)
 
-            logger.info(f"SNR estimated = {SNR}[dB]")
+            logger.info(f"SNR estimated = {SNR:.2f}[dB]")
         else:
             SNR = snr_input
-            logger.info(f"input SNR = {SNR}[dB]\n")
+            logger.info(f"input SNR = {SNR:.2f}[dB]\n")
 
         SNR_th = 15 + 10 * np.log10(p)
         #############################################
