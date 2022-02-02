@@ -18,27 +18,30 @@ class AdditiveWhiteGaussianNoise:
         """
         Compute sigmas at the desired SNR given a flattened input HSI Y
         """
-        assert SNR > 0, "SNR must be strictly positive"
         assert len(Y.shape) == 2
         self.L, self.N = Y.shape
         logger.debug(f"Y shape: {Y.shape}")
         self.SNR = SNR
         logger.debug(f"Desired SNR: {self.SNR}")
 
-        # Uniform across bands
-        sigmas = np.ones(self.L)
-        # Normalization
-        sigmas /= np.linalg.norm(sigmas)
-        logger.debug(f"Sigmas after normalization: {sigmas}")
-        # compute mean sigma
-        num = np.sum(Y ** 2) / self.N
-        denom = 10 ** (self.SNR / 10)
-        sigmas_mean = np.sqrt(num / denom)
-        logger.debug(f"Sigma mean based on SNR: {sigmas_mean}")
-        # Noise variance
-        sigmas *= sigmas_mean
-        logger.debug(f"Final sigmas value: {sigmas}")
-        self.sigmas = sigmas
+        if SNR is None:
+            self.sigmas = np.zeros(self.L)
+        else:
+            assert SNR > 0, "SNR must be stricly positive"
+            # Uniform across bands
+            sigmas = np.ones(self.L)
+            # Normalization
+            sigmas /= np.linalg.norm(sigmas)
+            logger.debug(f"Sigmas after normalization: {sigmas}")
+            # compute mean sigma
+            num = np.sum(Y ** 2) / self.N
+            denom = 10 ** (self.SNR / 10)
+            sigmas_mean = np.sqrt(num / denom)
+            logger.debug(f"Sigma mean based on SNR: {sigmas_mean}")
+            # Noise variance
+            sigmas *= sigmas_mean
+            logger.debug(f"Final sigmas value: {sigmas}")
+            self.sigmas = sigmas
 
     def transform(self, Y, seed=0):
         """
