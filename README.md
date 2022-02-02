@@ -22,7 +22,7 @@ $ conda create --name hsu python=3.8
 $ pip install -r requirements.txt
 ```
 
-To install `matlab.engine`, first visit the official [webpage](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)
+To install `matlab.engine`, first visit the official [webpage](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html).
 
   1. Locate `matlabroot` (e.g. `~/softwares/matlab-2020b/`)
   2. Create a `matlab` build directory (e.g. `~/matlab/`)
