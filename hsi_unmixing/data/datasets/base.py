@@ -3,14 +3,13 @@ import os
 import pdb
 import time
 
-import hsi_unmixing.models.supervised as setters
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 import torch
 from hsi_unmixing import EPS
-from hsi_unmixing.data import normalizers
-from hsi_unmixing.data.noise_models import AdditiveWhiteGaussianNoise as AWGN
+from hsi_unmixing.data.noises import AdditiveWhiteGaussianNoise as AWGN
+from hydra.utils import to_absolute_path
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -21,10 +20,10 @@ class HSI:
         self,
         name: str,
         data_path: str = "./data",
-        normalizer="GlobalMinMax",
-        setter="DecompSimplex",
+        normalizer=None,
+        setter=None,
     ):
-        path = os.path.join(data_path, name)
+        path = to_absolute_path(os.path.join(data_path, name))
         logger.debug(f"Path to be opened: {path}")
         assert os.path.isfile(path)
         self.shortname = name.strip(".mat")
@@ -50,8 +49,9 @@ class HSI:
         assert self.Y.shape == (self.L, self.N)
 
         # Normalize Y
-        Normalizer = normalizers.__dict__[normalizer]()
-        self.Y = Normalizer.transform(self.Y)
+        # Normalizer = normalizers.__dict__[normalizer]()
+        if normalizer is not None:
+            self.Y = normalizer.transform(self.Y)
 
         try:
             assert len(self.labels) == self.p
@@ -61,13 +61,17 @@ class HSI:
 
         except AssertionError:
             # Create pseudo labels
-            self.labels = list(np.arange(self.p))
+            # self.labels = list(np.arange(self.p))
+            self.labels = [f"#{ii}" for ii in range(self.p)]
 
         # Set GT abundances if not available
         try:
             self.__getattribute__("A")
         except AttributeError:
-            self.set_GT_abundances(setter=setter)
+            if setter is not None:
+                self.set_GT_abundances(setter=setter)
+            else:
+                raise ValueError(f"setter cannot be {setter}")
 
         assert self.A.shape == (self.p, self.N)
         # Abundance Sum to One Constraint (ASC)
@@ -93,13 +97,13 @@ class HSI:
 
     def set_GT_abundances(self, setter):
         """
-        Compute GT abundances based on GT endmembers using decompSimplex
+        Compute GT abundances based on GT endmembers using a specific setter
         """
         logger.info("Computing GT abundances...")
+        assert hasattr(setter, "solve")
 
         tic = time.time()
-        solver = setters.__dict__[setter]()
-        self.A = solver.solve(self.Y, self.E)
+        self.A = setter.solve(self.Y, self.E)
         tac = time.time()
 
         logger.info(f"Computing GT abundances took {tac - tic:.2f}s")
@@ -123,6 +127,8 @@ class HSI:
         Display endmembers spectrum signature
         """
         title = f"{self.shortname}"
+        ylabel = "Reflectance"
+        xlabel = "# Bands"
         if E0 is None:
             E = np.copy(self.E)
             title += " GT Endmembers"
@@ -132,6 +138,7 @@ class HSI:
             title += " Estimated Endmembers"
         if normalize:
             title += " ($l_\infty$-normalized)"
+            ylabel += " Normalized"
         plt.figure(figsize=(12, 4))
         for pp in range(self.p):
             data = E[:, pp]
@@ -140,6 +147,8 @@ class HSI:
             plt.plot(data, label=self.labels[pp])
         plt.title(title)
         plt.legend(frameon=True)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.show()
 
     def plot_abundances(self, A0=None, grid=None, transpose=False):
