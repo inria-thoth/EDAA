@@ -1,29 +1,28 @@
+# defaults:
+#   - mode : supervised
+seed: 0
+SNR: null
+runs: 1
+
 defaults:
-  - data: simulated
-  - model: SC_ASCpw
-  - trainer: default_trainer
-  - optimizer: adam
+  - dataset : SDC
+  - normalizer: GlobalMinMax
+  - setter: DS
+  - initializer: VCA
+  - model: DS
+  - aligner: greedy
+  - _self_
 
-load_ckpt: null
 
-checkpoint:
-  dirpath: "ckpts"
-  save_last: True
-  save_top_k: 1
-  period: 1
-  mode: "min"
-  filename: "{epoch}"
-
-seed: 42
-stdout: ${trainer.logging_level}
-id: "${model.id}_${data.id}"
+stdout: INFO
 
 hydra:
   run:
-    dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/${id}"
+    # dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/${id}"
+    dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}"
   sweep:
     dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/"
-    subdir: "${id}"
+    # subdir: "${id}"
   job_logging:
     version: 1
     formatters:
