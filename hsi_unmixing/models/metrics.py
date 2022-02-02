@@ -14,20 +14,20 @@ class BaseMetric:
         pass
 
     @staticmethod
-    def _check_input(E, Eref):
-        assert E.shape == Eref.shape
+    def _check_input(X, Xref):
+        assert X.shape == Xref.shape
         # Expect => L (# HSI channels) x p (# endmembers)
-        assert E.shape[0] > E.shape[1]
-        assert type(E) == type(Eref)
+        # assert E.shape[0] > E.shape[1]
+        assert type(X) == type(Xref)
 
-        if isinstance(E, torch.Tensor):
+        if isinstance(X, torch.Tensor):
             logger.debug("Convert tensors to arrays in Metric class...")
-            E = E.detach().numpy()
-            Eref = Eref.detach().numpy()
+            X = X.detach().numpy()
+            Xref = Xref.detach().numpy()
 
-        return E, Eref
+        return X, Xref
 
-    def __call__(self, E, Eref):
+    def __call__(self, X, Xref):
         raise NotImplementedError
 
     def __repr__(self):
@@ -71,3 +71,16 @@ class MeanSquareError(BaseMetric):
         normEref = LA.norm(Eref, axis=0, keepdims=True)
 
         return np.sqrt(normE.T ** 2 + normEref ** 2 - 2 * (E.T @ Eref))
+
+
+class aRMSE(BaseMetric):
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, A, Aref):
+        A, Aref = self._check_input(A, Aref)
+
+        # Expect abundances: p (# endmembers) x N (# pixels)
+        assert A.shape[0] < A.shape[1]
+
+        return 100 * np.sqrt(((A - Aref) ** 2).mean(0)).mean(0)
