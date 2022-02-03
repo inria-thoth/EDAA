@@ -50,9 +50,20 @@ class BaseAligner:
         return msg
 
 
+class NoneAligner(BaseAligner):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def fit(self, E):
+        """
+        Do not perform any alignment
+        """
+        self.P = np.eye(E.shape[1])
+
+
 class GreedyAligner(BaseAligner):
-    def __init__(self, hsi, criterion: str):
-        super().__init__(hsi, criterion)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def fit(self, E):
         """
@@ -91,8 +102,8 @@ class GreedyAligner(BaseAligner):
 
 
 class HungarianAlgorithmAligner(BaseAligner):
-    def __init__(self, hsi, criterion: str):
-        super().__init__(hsi, criterion)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.labels = {str(ii): label for ii, label in enumerate(hsi.labels)}
         self.reverse_labels = {v: k for k, v in self.labels.items()}
 
@@ -122,7 +133,7 @@ class HungarianAlgorithmAligner(BaseAligner):
         self.P = None
         # Create graph for hungarian algorithm (HA)
         G = self.create_graph()
-        pdb.set_trace()
+        # pdb.set_trace()
         # Find matching
         results = HA.find_matching(
             G,
