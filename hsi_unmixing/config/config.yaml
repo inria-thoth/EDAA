@@ -1,5 +1,6 @@
 # defaults:
 #   - mode : supervised
+mode: "supervised"
 seed: 0
 SNR: null
 runs: 1
@@ -12,6 +13,7 @@ defaults:
   - model: DS
   - aligner: greedy
   - noise: AWGN
+  - criterion: MAE
   - _self_
 
 
