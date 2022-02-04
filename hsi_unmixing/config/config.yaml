@@ -11,6 +11,7 @@ defaults:
   - initializer: VCA
   - model: DS
   - aligner: greedy
+  - noise: AWGN
   - _self_
 
 
