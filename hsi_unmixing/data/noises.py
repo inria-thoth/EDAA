@@ -32,7 +32,7 @@ class AdditiveWhiteGaussianNoise:
             sigmas = np.ones(self.L)
             # Normalization
             sigmas /= np.linalg.norm(sigmas)
-            logger.debug(f"Sigmas after normalization: {sigmas}")
+            logger.debug(f"Sigmas after normalization: {sigmas[0]}")
             # compute mean sigma
             num = np.sum(Y ** 2) / self.N
             denom = 10 ** (self.SNR / 10)
@@ -40,7 +40,7 @@ class AdditiveWhiteGaussianNoise:
             logger.debug(f"Sigma mean based on SNR: {sigmas_mean}")
             # Noise variance
             sigmas *= sigmas_mean
-            logger.debug(f"Final sigmas value: {sigmas}")
+            logger.debug(f"Final sigmas value: {sigmas[0]}")
             self.sigmas = sigmas
 
     def transform(self, Y, seed=0):
