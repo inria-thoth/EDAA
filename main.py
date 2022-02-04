@@ -22,7 +22,7 @@ def main(cfg: DictConfig) -> None:
     else:
         # copy initial config to a separate file to avoid overwriting it
         # when hydra resumes training and initializes again
-        shutil.copy2("./hydra/config.yaml", "config.yaml")
+        shutil.copy2(".hydra/config.yaml", "config.yaml")
 
     mode = cfg.mode
 
