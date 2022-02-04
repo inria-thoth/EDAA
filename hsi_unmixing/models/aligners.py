@@ -2,7 +2,7 @@ import logging
 import pdb
 import time
 
-import hsi_unmixing.models.metrics as criterions
+# import hsi_unmixing.models.metrics as criterions
 import numpy as np
 from hungarian_algorithm import algorithm as HA
 
@@ -11,9 +11,10 @@ logger.setLevel(logging.DEBUG)
 
 
 class BaseAligner:
-    def __init__(self, hsi, criterion: str):
+    def __init__(self, hsi, criterion):
         self.Eref = hsi.E
-        self.criterion = criterions.__dict__[criterion]()
+        # self.criterion = criterions.__dict__[criterion]()
+        self.criterion = criterion
         self.P = None
         self.dists = None
 
@@ -171,8 +172,9 @@ class HungarianAlgorithmAligner(BaseAligner):
 if __name__ == "__main__":
 
     from hsi_unmixing.data.datasets.base import HSI
+    from hsi_unmixing.models.metrics import MeanAbsoluteError as MAE
 
-    hsi = HSI("JasperRidge.mat")
+    hsi = HSI("Samson.mat", figs_dir=None)
     Eref = hsi.E
     L, p = Eref.shape
 
@@ -180,13 +182,21 @@ if __name__ == "__main__":
     Q = generator.permutation(np.eye(p))
     E = Eref @ Q + 0.001 * generator.randn(L, p)
 
-    metric = "MeanAbsoluteError"
+    # metric = "MeanAbsoluteError"
 
-    for cls in [GreedyAligner, HungarianAlgorithmAligner]:
+    criterion = MAE()
 
-        aligner = cls(hsi, metric)
+    for cls in [
+        NoneAligner,
+        GreedyAligner,
+        HungarianAlgorithmAligner,
+    ]:
+
+        aligner = cls(hsi=hsi, criterion=criterion)
         Ehat = aligner.fit_transform(E)
 
+        print(f"{aligner}")
+        print("-" * 15)
         print(f"Generated permutation:\n{Q}")
         print(f"Estimated permutation:\n{aligner.P}")
         print(f"Transposed estimated permutation:\n{aligner.P.T}")
