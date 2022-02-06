@@ -4,25 +4,16 @@ import os
 import pdb
 import time
 
+import numpy as np
 from hydra.utils import instantiate
-from omegaconf import OmegaConf
 
-# from hsi_unmixing.data import AWGN
-# from hsi_unmixing.models.initializers import VCA
-# from hsi_unmixing import data as data_utils
-# from hsi_unmixing.data import datasets
 from hsi_unmixing.models.metrics import aRMSE
-
-# from hsi_unmixing.models.supervised import FCLS, DecompSimplex
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 def main(cfg):
-    print("Hello World!")
-    logger.info(f"Current working directory: {os.getcwd()}")
-    # print(OmegaConf.to_yaml(cfg))
     setter = instantiate(cfg.setter)
     normalizer = instantiate(cfg.normalizer)
     initializer = instantiate(cfg.initializer)
@@ -30,7 +21,7 @@ def main(cfg):
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
 
-    results = {}
+    results = []
 
     for run in range(cfg.runs):
         hsi = instantiate(
@@ -38,7 +29,6 @@ def main(cfg):
             setter=setter,
             normalizer=normalizer,
         )
-        # noise = AWGN()
         hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
 
         E0 = initializer.init_like(hsi, seed=run)
@@ -54,8 +44,14 @@ def main(cfg):
 
         metric = aRMSE()
         res = metric(hsi.A, A0)
-        logging.info(f"aRMSE: {res:.2f}")
-        hsi.plot_abundances(A0=A0)
-        results[run] = res
+        logger.info(f"aRMSE: {res:.2f}")
 
-    logging.info(results)
+        if cfg.display:
+            hsi.plot_abundances(A0=A0)
+
+        results.append(res)
+
+    logger.info(np.round(results, 2))
+    mean = np.mean(results)
+    std = np.std(results)
+    logger.info(f"Mean +/- std [SNR={cfg.SNR}dB]: {mean:.2f} +/- {std:.2f} %")

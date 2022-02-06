@@ -4,24 +4,18 @@ import os
 import pdb
 import time
 
+import numpy as np
 from hydra.utils import instantiate
-from omegaconf import OmegaConf
 
-# from hsi_unmixing.data import AWGN
-# from hsi_unmixing.models.initializers import VCA
-# from hsi_unmixing import data as data_utils
-# from hsi_unmixing.data import datasets
 from hsi_unmixing.models.metrics import aRMSE
-
-# from hsi_unmixing.models.supervised import FCLS, DecompSimplex
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 def main(cfg):
-    logger.info(f"Current working directory: {os.getcwd()}")
-    # print(OmegaConf.to_yaml(cfg))
+
+    # Instantiate modules objects
     setter = instantiate(cfg.setter)
     normalizer = instantiate(cfg.normalizer)
     initializer = instantiate(cfg.initializer)
@@ -30,7 +24,7 @@ def main(cfg):
     criterion = instantiate(cfg.criterion)
     metric = aRMSE()
 
-    results = {}
+    results = []
 
     for run in range(cfg.runs):
         hsi = instantiate(
@@ -53,14 +47,19 @@ def main(cfg):
         A1 = aligner.transform_abundances(A0)
 
         res = metric(hsi.A, A1)
-        logging.info(f"aRMSE: {res:.2f}")
-        hsi.plot_endmembers(E0=E1)
-        hsi.plot_abundances(A0=A1)
+        logger.info(f"aRMSE: {res:.2f}")
 
-        if hasattr(model, "Xmap"):
-            X1 = aligner.transform_abundances(model.Xmap)
-            hsi.plot_contributions(X0=X1, method=model)
+        if cfg.display:
+            hsi.plot_endmembers(E0=E1)
+            hsi.plot_abundances(A0=A1)
 
-        results[run] = res
+            if hasattr(model, "Xmap"):
+                X1 = aligner.transform_abundances(model.Xmap)
+                hsi.plot_contributions(X0=X1, method=model)
 
-    logging.info(results)
+        results.append(res)
+
+    logger.info(np.round(results, 2))
+    mean = np.mean(results)
+    std = np.std(results)
+    logger.info(f"Mean +/- std [SNR={cfg.SNR}dB]: {mean:.2f} +/- {std:.2f} %")

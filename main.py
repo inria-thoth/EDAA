@@ -5,7 +5,7 @@ import shutil
 
 import hydra
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -13,6 +13,8 @@ logger.setLevel(logging.DEBUG)
 
 @hydra.main(config_path="hsi_unmixing/config", config_name="config")
 def main(cfg: DictConfig) -> None:
+
+    logger.info(f"Current working directory: {os.getcwd()}")
 
     if os.path.exists("config.yaml"):
         logger.info("Loading pre-existing config file")
@@ -23,6 +25,8 @@ def main(cfg: DictConfig) -> None:
         # copy initial config to a separate file to avoid overwriting it
         # when hydra resumes training and initializes again
         shutil.copy2(".hydra/config.yaml", "config.yaml")
+
+    logger.debug(OmegaConf.to_yaml(cfg))
 
     mode = cfg.mode
 
