@@ -1,9 +1,8 @@
-# defaults:
-#   - mode : supervised
 mode: "supervised"
 seed: 0
-SNR: null
-runs: 1
+SNR: Null
+runs: 10
+display: False
 
 defaults:
   - dataset : SDC
