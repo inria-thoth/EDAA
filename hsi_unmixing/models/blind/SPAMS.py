@@ -11,8 +11,8 @@ logger.setLevel(logging.DEBUG)
 
 
 class ArchetypalAnalysis:
-    def __init__(self):
-        pass
+    def __init__(self, params: dict = {}):
+        self.params = params
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -23,14 +23,6 @@ class ArchetypalAnalysis:
         Y,
         p,
         E0=None,
-        returnAB=True,
-        robust=False,
-        epsilon=1e-3,
-        computeXtX=True,
-        stepsFISTA=3,
-        stepsAS=50,
-        randominit=False,
-        numThreads=-1,
     ):
         """
         Archetypal Analysis optimizer from SPAMS
@@ -46,16 +38,6 @@ class ArchetypalAnalysis:
                 2D initial endmember matrix (L x p)
                 Default: None
 
-            returnAB: `bool`
-                Returns abundance and pixel contribution maps
-                Default: True
-
-            computeXtX: `bool`
-                Compute the covariance matrix
-                Default: True
-
-            ...
-
         Source: http://thoth.inrialpes.fr/people/mairal/spams/doc-python/html/doc_spams004.html#sec8
         """
         tic = time.time()
@@ -70,21 +52,16 @@ class ArchetypalAnalysis:
             p=p,
             Z0=Ef,
             returnAB=True,
-            robust=robust,
-            epsilon=epsilon,
-            computeXtX=computeXtX,
-            stepsFISTA=stepsFISTA,
-            stepsAS=stepsAS,
-            randominit=randominit,
-            numThreads=numThreads,
+            **self.params,
         )
 
         self.E = Ehat
         self.A = sp.csc_matrix.toarray(Asparse)
         self.Xmap = sp.csc_matrix.toarray(Xsparse).T
         tac = time.time()
+        self.time = round(tac - tic, 2)
 
-        logger.info(f"{self} took {tac - tic:.2f}s")
+        logger.info(f"{self} took {self.time}s")
         return self.E, self.A
 
 
@@ -93,7 +70,7 @@ if __name__ == "__main__":
     from hsi_unmixing.models.aligners import GreedyAligner as GA
     from hsi_unmixing.models.initializers import VCA
 
-    hsi = HSI("JasperRidge.mat")
+    hsi = HSI("Samson.mat")
 
     vca = VCA()
     Einit = vca.init_like(hsi)
