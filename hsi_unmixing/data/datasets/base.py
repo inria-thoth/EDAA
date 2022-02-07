@@ -87,11 +87,6 @@ class HSI:
         if self.figs_dir is not None:
             os.makedirs(self.figs_dir, exist_ok=True)
 
-        # Convert to Tensors
-        self.Yt = torch.Tensor(self.Y)
-        self.Et = torch.Tensor(self.E)
-        self.At = torch.Tensor(self.A)
-
     def __repr__(self):
         msg = f"HSI => {self.shortname}\n"
         msg += "---------------------\n"
@@ -117,9 +112,9 @@ class HSI:
     def __call__(self, asTensor=False):
 
         if asTensor:
-            Y = self.Yt.clone()
-            E = self.Et.clone()
-            A = self.At.clone()
+            Y = torch.Tensor(self.Y)
+            E = torch.Tensor(self.E)
+            A = torch.Tensor(self.A)
 
         else:
             Y = np.copy(self.Y)
