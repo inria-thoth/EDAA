@@ -11,8 +11,30 @@ logger.setLevel(logging.DEBUG)
 
 
 class EDA:
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        eta0=0.1,
+        K=1000,
+        alpha_init="softmax",
+        steps="simple-sqrt",
+    ):
+        """
+        eta0: `float`
+            Step size initial value
+
+        K: `int`
+            Maximum number of unfoldings
+
+        alpha_init: `str`
+            Alpha initialization enforcing ASC
+
+        steps: `str`
+            Step sizes decreasing trend
+        """
+        self.eta0 = eta0
+        self.K = K
+        self.alpha_init = alpha_init
+        self.steps = steps
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -22,12 +44,7 @@ class EDA:
         self,
         Y,
         p,
-        E,
-        eta0=1.0,
-        K=100,
-        tol=1e-6,
-        alpha_init="softmax",
-        steps="sqrt-simple",
+        E0=None,
     ):
         """
         Entropic Descent Algorithm
@@ -42,49 +59,34 @@ class EDA:
             E0: `torch Tensor`
                 2D initial endmember matrix (L x p)
 
-            eta0: `float`
-                Step size initial value
-
-            K: `int`
-                Maximum number of unfoldings
-
-            tol: `float`
-                Stopping criterion
-
-            alpha_init: `str`
-                Alpha initialization enforcing ASC
-
-            steps: `str`
-                Step sizes decreasing trend
         """
         tic = time.time()
         # Sanity checks
         L, N = Y.shape
-        assert L == E.shape[0]
-        assert p == E.shape[1]
+        assert L == E0.shape[0]
+        assert p == E0.shape[1]
 
         Y = Y.t()
-        # E = E.t()
 
         # Step sizes scheme
-        if steps == "sqrt-simple":
-            etas = eta0 / torch.sqrt(torch.arange(start=1, end=K + 1))
-        elif steps == "flat":
-            etas = eta0 * torch.ones(K)
+        if self.steps == "sqrt-simple":
+            etas = self.eta0 / torch.sqrt(torch.arange(start=1, end=self.K + 1))
+        elif self.steps == "flat":
+            etas = self.eta0 * torch.ones(self.K)
         else:
             raise NotImplementedError
 
         # Inner functions
         def f(alpha):
-            return 0.5 * (Y - F.linear(alpha, E) ** 2).mean()
+            return 0.5 * (Y - F.linear(alpha, E0) ** 2).mean()
 
         def grad_f(alpha):
-            return -F.linear(Y - F.linear(alpha, E), E.t())
+            return -F.linear(Y - F.linear(alpha, E0), E0.t())
 
         # Initialization
-        if alpha_init == "softmax":
-            alpha = F.softmax(F.linear(Y, E.t()), dim=1)
-        elif alpha_init == "uniform":
+        if self.alpha_init == "softmax":
+            alpha = F.softmax(F.linear(Y, E0.t()), dim=1)
+        elif self.alpha_init == "uniform":
             alpha = torch.ones(N, p) / p
         else:
             raise NotImplementedError
@@ -92,18 +94,18 @@ class EDA:
         logger.info(f"Loss: {f(alpha):.6f} [0]")
 
         # Encoding
-        for kk in range(K):
+        for kk in range(self.K):
             alpha = self.update(alpha, -etas[kk] * grad_f(alpha))
             logger.info(f"Loss: {f(alpha):.6f} [{kk+1}]")
 
         # Decoding
-        Y_hat = F.linear(alpha, E)
+        Y_hat = F.linear(alpha, E0)
 
         tac = time.time()
 
         logger.info(f"{self} took {tac - tic:.2f}s")
 
-        return Y_hat.t(), E, alpha.t()
+        return Y_hat.t(), E0, alpha.t()
 
     @staticmethod
     def update(a, b):
@@ -114,6 +116,7 @@ class EDA:
 
 
 if __name__ == "__main__":
+
     from hsi_unmixing.data.datasets.base import HSI
     from hsi_unmixing.models.aligners import GreedyAligner as GA
     from hsi_unmixing.models.initializers import VCA, TrueEndmembers
@@ -121,7 +124,7 @@ if __name__ == "__main__":
     hsi = HSI("JasperRidge.mat")
 
     params = {
-        "K": 300,
+        "K": 1000,
         "alpha_init": "softmax",
         "steps": "sqrt-simple",
         "eta0": 0.1,
@@ -131,13 +134,12 @@ if __name__ == "__main__":
     te = TrueEndmembers()
     # Einit = vca.init_like(hsi)
     Einit = te.init_like(hsi)
-    solver = EDA()
+    solver = EDA(**params)
     Yt, Et, At = hsi(asTensor=True)
     Y0, E0, A0 = solver.solve(
         Yt,
         hsi.p,
-        E=torch.Tensor(Einit),
-        **params,
+        E0=torch.Tensor(Einit),
     )
 
     E0 = E0.detach().numpy()
