@@ -16,7 +16,7 @@ class EDA:
         eta0=0.1,
         K=1000,
         alpha_init="softmax",
-        steps="simple-sqrt",
+        steps="sqrt-simple",
     ):
         """
         eta0: `float`
@@ -74,7 +74,7 @@ class EDA:
 
         # Inner functions
         def f(alpha):
-            return 0.5 * (Y - F.linear(alpha, E0) ** 2).mean()
+            return 0.5 * ((Y - F.linear(alpha, E0)) ** 2).sum()
 
         def grad_f(alpha):
             return -F.linear(Y - F.linear(alpha, E0), E0.t())
@@ -87,12 +87,12 @@ class EDA:
         else:
             raise NotImplementedError
 
-        logger.info(f"Loss: {f(alpha):.6f} [0]")
+        logger.debug(f"Loss: {f(alpha):.6f} [0]")
 
         # Encoding
         for kk in range(self.K):
             alpha = self.update(alpha, -etas[kk] * grad_f(alpha))
-            logger.info(f"Loss: {f(alpha):.6f} [{kk+1}]")
+            logger.debug(f"Loss: {f(alpha):.6f} [{kk+1}]")
 
         # Decoding
         Y_hat = F.linear(alpha, E0)
@@ -101,7 +101,9 @@ class EDA:
 
         logger.info(f"{self} took {tac - tic:.2f}s")
 
-        return Y_hat.t(), E0, alpha.t()
+        self.A = alpha.t()
+
+        return self.A
 
     @staticmethod
     def update(a, b):

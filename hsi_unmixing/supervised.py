@@ -5,6 +5,7 @@ import pdb
 import time
 
 import numpy as np
+import torch
 from hydra.utils import instantiate
 
 from hsi_unmixing.models.metrics import aRMSE
@@ -40,7 +41,15 @@ def main(cfg):
         )
         E1 = aligner.fit_transform(E0)
 
-        A0 = model.solve(hsi.Y, E1)
+        Y, _, _ = hsi(asTensor=cfg.torch)
+
+        if cfg.torch:
+            E1 = torch.Tensor(E1)
+
+        A0 = model.solve(Y, E1)
+
+        if cfg.torch:
+            A0 = A0.detach().numpy()
 
         metric = aRMSE()
         res = metric(hsi.A, A0)

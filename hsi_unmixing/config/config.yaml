@@ -3,6 +3,7 @@ seed: 0
 SNR: Null
 runs: 10
 display: False
+torch: False
 
 defaults:
   - dataset : SDC
