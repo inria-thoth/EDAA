@@ -39,6 +39,10 @@ class NMFQMV:
         # Go to NMF-QMV code
         self.eng.cd(path_to_NMFQMV)
 
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}"
+        return msg
+
     def solve(self, img, p, *args, **kwargs):
         tic = time.time()
 
