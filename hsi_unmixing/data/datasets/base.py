@@ -167,6 +167,7 @@ class HSI:
             figname = "GT_" if E0 is None else ""
             figname += f"endmembers-{run}.png"
             plt.savefig(os.path.join(self.figs_dir, "name"))
+            plt.close()
 
     def plot_abundances(
         self,
@@ -226,6 +227,7 @@ class HSI:
             figname += f"abundances-{run}.png"
             path = os.path.join(self.figs_dir, figname)
             plt.savefig(path)
+            plt.close()
 
     def plot_hsi(
         self,
@@ -318,6 +320,7 @@ class HSI:
         else:
             path = os.path.join(self.figs_dir, f"contributions-{run}.png")
             plt.savefig(path)
+            plt.close()
 
 
 if __name__ == "__main__":
