@@ -53,7 +53,7 @@ class EDA:
                 2D data matrix (L x N)
 
             E0: `torch Tensor`
-                2D initial endmember matrix (L x p)
+                2D endmember matrix (L x p)
 
         """
         tic = time.time()
@@ -66,7 +66,12 @@ class EDA:
 
         # Step sizes scheme
         if self.steps == "sqrt-simple":
-            etas = self.eta0 / torch.sqrt(torch.arange(start=1, end=self.K + 1))
+            etas = self.eta0 / torch.sqrt(
+                torch.arange(
+                    start=1,
+                    end=self.K + 1,
+                )
+            )
         elif self.steps == "flat":
             etas = self.eta0 * torch.ones(self.K)
         else:
@@ -99,9 +104,12 @@ class EDA:
 
         tac = time.time()
 
-        logger.info(f"{self} took {tac - tic:.2f}s")
+        self.time = round(tac - tic, 2)
+
+        logger.info(f"{self} took {self.time:.2f}s")
 
         self.A = alpha.t()
+        self.Y = Y_hat
 
         return self.A
 
