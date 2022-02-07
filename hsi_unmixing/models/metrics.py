@@ -83,4 +83,5 @@ class aRMSE(BaseMetric):
         # Expect abundances: p (# endmembers) x N (# pixels)
         assert A.shape[0] < A.shape[1]
 
-        return 100 * np.sqrt(((A - Aref) ** 2).mean(0)).mean(0)
+        # return 100 * np.sqrt(((A - Aref) ** 2).mean(0)).mean(0)
+        return 100 * np.sqrt(((A - Aref) ** 2).mean())
