@@ -19,11 +19,12 @@ class HSI:
     def __init__(
         self,
         name: str,
-        data_path: str = "./data",
+        data_dir: str = "./data",
+        figs_dir: str = "./figs",
         normalizer=None,
         setter=None,
     ):
-        path = to_absolute_path(os.path.join(data_path, name))
+        path = to_absolute_path(os.path.join(data_dir, name))
         logger.debug(f"Path to be opened: {path}")
         assert os.path.isfile(path)
         self.shortname = name.strip(".mat")
@@ -81,6 +82,11 @@ class HSI:
         # Endmembers Non-negative Constraint
         assert np.all(self.E >= -EPS)
 
+        # Save figures path
+        self.figs_dir = figs_dir
+        if self.figs_dir is not None:
+            os.makedirs(self.figs_dir, exist_ok=True)
+
         # Convert to Tensors
         self.Yt = torch.Tensor(self.Y)
         self.Et = torch.Tensor(self.E)
@@ -122,7 +128,13 @@ class HSI:
 
         return (Y, E, A)
 
-    def plot_endmembers(self, E0=None, normalize=False):
+    def plot_endmembers(
+        self,
+        E0=None,
+        normalize=False,
+        display=True,
+        run=0,
+    ):
         """
         Display endmembers spectrum signature
         """
@@ -149,9 +161,21 @@ class HSI:
         plt.legend(frameon=True)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
-        plt.show()
+        if display:
+            plt.show()
+        else:
+            figname = "GT_" if E0 is None else ""
+            figname += f"endmembers-{run}.png"
+            plt.savefig(os.path.join(self.figs_dir, "name"))
 
-    def plot_abundances(self, A0=None, grid=None, transpose=False):
+    def plot_abundances(
+        self,
+        A0=None,
+        grid=None,
+        transpose=False,
+        display=True,
+        run=0,
+    ):
         """
         Display abundances maps
         """
@@ -195,7 +219,13 @@ class HSI:
                     break
 
         plt.suptitle(title)
-        plt.show()
+        if display:
+            plt.show()
+        else:
+            figname = "GT_" if A0 is None else ""
+            figname += f"abundances-{run}.png"
+            path = os.path.join(self.figs_dir, figname)
+            plt.savefig(path)
 
     def plot_hsi(
         self,
@@ -242,6 +272,8 @@ class HSI:
         grid=None,
         transpose=False,
         method=None,
+        display=True,
+        run=0,
     ):
         """
         Display pixels contribution maps
@@ -281,7 +313,11 @@ class HSI:
                     break
 
         plt.suptitle(title)
-        plt.show()
+        if display:
+            plt.show()
+        else:
+            path = os.path.join(self.figs_dir, f"contributions-{run}.png")
+            plt.savefig(path)
 
 
 if __name__ == "__main__":

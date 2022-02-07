@@ -46,8 +46,11 @@ def main(cfg):
         res = metric(hsi.A, A0)
         logger.info(f"aRMSE: {res:.2f}")
 
-        if cfg.display:
-            hsi.plot_abundances(A0=A0)
+        hsi.plot_abundances(
+            A0=A0,
+            display=cfg.display,
+            run=run,
+        )
 
         results.append(res)
 
