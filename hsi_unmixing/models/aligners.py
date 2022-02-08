@@ -103,9 +103,14 @@ class GreedyAligner(BaseAligner):
 
 
 class HungarianAlgorithmAligner(BaseAligner):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.labels = {str(ii): label for ii, label in enumerate(hsi.labels)}
+    def __init__(self, hsi, **kwargs):
+        super().__init__(hsi=hsi, **kwargs)
+        self.labels = {
+            str(ii): label
+            for ii, label in enumerate(
+                hsi.labels,
+            )
+        }
         self.reverse_labels = {v: k for k, v in self.labels.items()}
 
     def fit(self, E):
