@@ -22,7 +22,10 @@ def main(cfg):
     model = instantiate(cfg.model)
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
+    # TODO Add SAD for endmembers
     metric = aRMSE()
+    # metrics = [aRMSE(), SAD()]
+    # TODO Add multiple metrics
 
     results = []
 
@@ -41,7 +44,13 @@ def main(cfg):
             hsi=hsi,
             criterion=criterion,
         )
-        E0, A0 = model.solve(hsi.Y, hsi.p, E0=E0)
+        Y, _, _ = hsi(asTensor=cfg.torch)
+
+        E0, A0 = model.solve(Y, hsi.p, E0=E0)
+
+        # if cfg.torch:
+        #     E0 = E0.detach().numpy()
+        #     A0 = A0.detach().numpy()
 
         E1 = aligner.fit_transform(E0)
         A1 = aligner.transform_abundances(A0)
