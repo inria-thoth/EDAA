@@ -43,11 +43,12 @@ class NMFQMV:
         msg = f"{self.__class__.__name__}"
         return msg
 
-    def solve(self, img, p, *args, **kwargs):
+    def solve(self, img, p, H, W, *args, **kwargs):
         tic = time.time()
 
         L, N = img.shape
-        img = img.reshape(N, 1, L)
+        img = img.T.reshape(H, W, L)
+        img = img.transpose(1, 0, 2)
         _, Ehat, Ahat = self.eng.NMF_QMV(
             matlab.double(img.tolist()),
             matlab.double([p]),

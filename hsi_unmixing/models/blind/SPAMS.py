@@ -23,6 +23,8 @@ class ArchetypalAnalysis:
         Y,
         p,
         E0=None,
+        *args,
+        **kwargs,
     ):
         """
         Archetypal Analysis optimizer from SPAMS
