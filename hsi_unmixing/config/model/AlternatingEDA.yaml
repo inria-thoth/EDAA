@@ -1,10 +1,10 @@
 _target_: hsi_unmixing.models.blind.AlternatingEDA
 eta0A: 0.1
-eta0B: 0.1
+eta0B: 0.001
 KA: 100
 KB: 100
 A_init: "softmax"
 schemeA: "sqrt-simple"
 schemeB: "sqrt-simple"
-nb_alternating: 10
+nb_alternating: 100
 device: Null
