@@ -58,7 +58,7 @@ class PixelwiseNorm(BaseNormalizer):
         # Expect L (# HSI channels) x N (# HSI pixels)
         assert Y.shape[0] < Y.shape[1]
         num = Y
-        denom = LA.norm(Y, axis=1, ord=self.order, keepdims=True)
+        denom = LA.norm(Y, axis=0, ord=self.order, keepdims=True)
         return (num / denom).astype(self.dtype)
 
 
