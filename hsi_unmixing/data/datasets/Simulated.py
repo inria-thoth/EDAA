@@ -17,6 +17,16 @@ class SimulatedDataCubesNoPurePixelsHardDataset(HSI):
         super().__init__("SimulatedDataCubesNoPurePixelsHard.mat", **kwargs)
 
 
+class Sim1Dataset(HSI):
+    def __init__(self, **kwargs):
+        super().__init__("Sim1.mat", **kwargs)
+
+
+class Sim2Dataset(HSI):
+    def __init__(self, **kwargs):
+        super().__init__("Sim2.mat", **kwargs)
+
+
 if __name__ == "__main__":
     hsi1 = SimulatedDataCubesNoPurePixelsDataset()
     print(hsi1)

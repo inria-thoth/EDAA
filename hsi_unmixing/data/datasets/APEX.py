@@ -19,6 +19,11 @@ class APEX6Dataset(HSI):
         super().__init__("APEX6fixed.mat", **kwargs)
 
 
+class TinyAPEXDataset(HSI):
+    def __init__(self, **kwargs):
+        super().__init__("TinyAPEX.mat", **kwargs)
+
+
 if __name__ == "__main__":
     from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
     # from hsi_unmixing.data.normalizers import PixelwiseL1Norm as PL1

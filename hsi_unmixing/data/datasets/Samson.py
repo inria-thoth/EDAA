@@ -12,6 +12,11 @@ class SamsonDataset(HSI):
         super().__init__("Samson.mat", **kwargs)
 
 
+class SamsonFixedDataset(HSI):
+    def __init__(self, **kwargs):
+        super().__init__("SamsonFixed.mat", **kwargs)
+
+
 if __name__ == "__main__":
     hsi = SamsonDataset()
     print(hsi)
