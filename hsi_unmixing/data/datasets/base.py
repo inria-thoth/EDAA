@@ -161,7 +161,7 @@ class HSI:
         else:
             figname = "GT_" if E0 is None else ""
             figname += f"endmembers-{run}.png"
-            plt.savefig(os.path.join(self.figs_dir, "name"))
+            plt.savefig(os.path.join(self.figs_dir, figname))
             plt.close()
 
     def plot_abundances(
