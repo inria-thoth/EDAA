@@ -3,7 +3,9 @@ import pdb
 
 import numpy as np
 import numpy.linalg as LA
-import torch
+import pandas as pd
+
+# import torch
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -11,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 
 class BaseMetric:
     def __init__(self):
-        pass
+        self.name = self.__class__.__name__
 
     @staticmethod
     def _check_input(X, Xref):
@@ -20,10 +22,10 @@ class BaseMetric:
         # assert E.shape[0] > E.shape[1]
         assert type(X) == type(Xref)
 
-        if isinstance(X, torch.Tensor):
-            logger.debug("Convert tensors to arrays in Metric class...")
-            X = X.detach().numpy()
-            Xref = Xref.detach().numpy()
+        # if isinstance(X, torch.Tensor):
+        #     logger.debug("Convert tensors to arrays in Metric class...")
+        #     X = X.detach().numpy()
+        #     Xref = Xref.detach().numpy()
 
         return X, Xref
 
@@ -31,7 +33,7 @@ class BaseMetric:
         raise NotImplementedError
 
     def __repr__(self):
-        return f"{self.__class__.__name__}"
+        return f"{self.name}"
 
 
 class MeanAbsoluteError(BaseMetric):
@@ -60,6 +62,15 @@ class SpectralAngleDistance(BaseMetric):
         return np.arccos((E / normE).T @ (Eref / normEref))
 
 
+class SADDegrees(SpectralAngleDistance):
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, E, Eref):
+        tmp = super().__call__(E, Eref)
+        return (np.diag(tmp) * (180 / np.pi)).mean()
+
+
 class MeanSquareError(BaseMetric):
     def __init__(self):
         super().__init__()
@@ -81,7 +92,61 @@ class aRMSE(BaseMetric):
         A, Aref = self._check_input(A, Aref)
 
         # Expect abundances: p (# endmembers) x N (# pixels)
-        assert A.shape[0] < A.shape[1]
+        # assert A.shape[0] < A.shape[1]
 
         # return 100 * np.sqrt(((A - Aref) ** 2).mean(0)).mean(0)
         return 100 * np.sqrt(((A - Aref) ** 2).mean())
+
+
+class RunAggregator:
+    def __init__(
+        self,
+        metric,
+        use_endmembers=False,
+    ):
+        """
+        Aggregate runs by tracking a metric
+        """
+        self.metric = metric
+        self.use_endmembers = use_endmembers
+        self.filename = f"{metric}.json"
+        # self.A_metrics = {"RMSE": aRMSE()}
+        # self.E_metrics = {"SAD": SADDegrees()}
+        self.data = {}
+        self.df = None
+        self.summary = None
+
+    def add_run(self, run, X, Xhat, labels):
+
+        d = {}
+        d["Avg"] = self.metric(X, Xhat)
+        for ii, label in enumerate(labels):
+            if self.use_endmembers:
+                x, xhat = X[:, ii][:, None], Xhat[:, ii][:, None]
+                d[label] = self.metric(x, xhat)
+            else:
+                d[label] = self.metric(X[ii], Xhat[ii])
+
+        logger.debug(f"Run {run}: {self.metric} => {d}")
+
+        self.data[run] = d
+
+    def aggregate(self):
+        self.df = pd.DataFrame(self.data).T
+        self.summary = self.df.describe().round(2)
+        logger.info(f"{self.metric} summary:\n{self.summary}")
+        self.save()
+
+    def save(self):
+        self.df.to_json(f"runs-{self.filename}")
+        self.summary.to_json(f"summary-{self.filename}")
+
+
+class SADAggregator(RunAggregator):
+    def __init__(self):
+        super().__init__(SADDegrees(), use_endmembers=True)
+
+
+class RMSEAggregator(RunAggregator):
+    def __init__(self):
+        super().__init__(aRMSE(), use_endmembers=False)

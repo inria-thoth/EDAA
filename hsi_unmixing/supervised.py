@@ -1,14 +1,10 @@
-import json
 import logging
-import os
 import pdb
-import time
 
-import numpy as np
 import torch
 from hydra.utils import instantiate
 
-from hsi_unmixing.models.metrics import aRMSE
+from hsi_unmixing.models.metrics import RMSEAggregator, SADAggregator
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -22,7 +18,8 @@ def main(cfg):
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
 
-    results = []
+    RMSE = RMSEAggregator()
+    SAD = SADAggregator()
 
     for run in range(cfg.runs):
         hsi = instantiate(
@@ -31,6 +28,11 @@ def main(cfg):
             normalizer=normalizer,
         )
         hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
+
+        if run == 0:
+            hsi.plot_endmembers(display=cfg.display)
+            hsi.plot_abundances(display=cfg.display)
+            hsi.plot_PCA(display=cfg.display)
 
         E0 = initializer.init_like(hsi, seed=run)
 
@@ -51,9 +53,8 @@ def main(cfg):
         if cfg.torch:
             A0 = A0.detach().numpy()
 
-        metric = aRMSE()
-        res = metric(hsi.A, A0)
-        logger.info(f"aRMSE: {res:.2f}")
+        RMSE.add_run(run, hsi.A, A0, hsi.labels)
+        SAD.add_run(run, hsi.E, E1, hsi.labels)
 
         hsi.plot_abundances(
             A0=A0,
@@ -61,9 +62,5 @@ def main(cfg):
             run=run,
         )
 
-        results.append(res)
-
-    logger.info(np.round(results, 2))
-    mean = np.mean(results)
-    std = np.std(results)
-    logger.info(f"Mean +/- std [SNR={cfg.SNR}dB]: {mean:.2f} +/- {std:.2f} %")
+    RMSE.aggregate()
+    SAD.aggregate()
