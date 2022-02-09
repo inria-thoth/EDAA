@@ -175,6 +175,7 @@ class VCA(BaseInit):
         E = Yp[:, indices]
 
         logger.debug(f"Indices chosen to be the most pure: {indices}")
+        self.indices = indices
 
         return E
 
