@@ -5,6 +5,7 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.linalg as LA
 import scipy.io as sio
 import torch
 from hsi_unmixing import EPS
@@ -139,10 +140,12 @@ class HSI:
         if E0 is None:
             E = np.copy(self.E)
             title += " GT Endmembers"
+            linestyle = "-"
         else:
             assert self.E.shape == E0.shape
             E = np.copy(E0)
             title += " Estimated Endmembers"
+            linestyle = "--"
         if normalize:
             title += " ($l_\infty$-normalized)"
             ylabel += " Normalized"
@@ -151,7 +154,7 @@ class HSI:
             data = E[:, pp]
             if normalize:
                 data /= E[:, pp].max()
-            plt.plot(data, label=self.labels[pp])
+            plt.plot(data, label=self.labels[pp], linestyle=linestyle)
         plt.title(title)
         plt.legend(frameon=True)
         plt.xlabel(xlabel)
@@ -159,7 +162,8 @@ class HSI:
         if display:
             plt.show()
         else:
-            figname = "GT_" if E0 is None else ""
+            figname = f"{self.shortname}-"
+            figname += "GT_" if E0 is None else ""
             figname += f"endmembers-{run}.png"
             plt.savefig(os.path.join(self.figs_dir, figname))
             plt.close()
@@ -206,7 +210,7 @@ class HSI:
                     curr_ax = ax[jj]
                 else:
                     curr_ax = ax[ii, jj]
-                curr_ax.imshow(A[kk, :, :])
+                curr_ax.imshow(A[kk, :, :], vmin=0.0, vmax=1.0)
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
                 kk += 1
@@ -218,7 +222,8 @@ class HSI:
         if display:
             plt.show()
         else:
-            figname = "GT_" if A0 is None else ""
+            figname = f"{self.shortname}-"
+            figname += "GT_" if A0 is None else ""
             figname += f"abundances-{run}.png"
             path = os.path.join(self.figs_dir, figname)
             plt.savefig(path)
@@ -301,7 +306,12 @@ class HSI:
                     curr_ax = ax[jj]
                 else:
                     curr_ax = ax[ii, jj]
-                curr_ax.imshow(X[kk, :, :], cmap="inferno")
+                curr_ax.imshow(
+                    X[kk, :, :],
+                    cmap="inferno",
+                    vmin=0.0,
+                    vmax=1.0,
+                )
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
                 kk += 1
@@ -313,17 +323,53 @@ class HSI:
         if display:
             plt.show()
         else:
-            path = os.path.join(self.figs_dir, f"contributions-{run}.png")
+            filename = f"{self.shortname}_contributions-{run}.png"
+            path = os.path.join(self.figs_dir, filename)
             plt.savefig(path)
+            plt.close()
+
+    def plot_PCA(
+        self,
+        E0=None,
+        display=True,
+        run=0,
+    ):
+        """
+        Plot 2D PCA-projected data manifold
+        """
+        title = f"{self.shortname} 2D PCA-projected data manifold"
+        xlabel = "PC #1"
+        ylabel = "PC #2"
+        if E0 is None:
+            E = np.copy(self.E)
+            title += " - GT"
+        else:
+            assert self.E.shape == E0.shape
+            E = np.copy(E0)
+            title += " - Estimated endmembers"
+
+        U, _, _ = LA.svd(self.Y, full_matrices=True)
+
+        U1, U2 = U[0], U[1]
+
+        y1, y2 = U1 @ self.Y, U2 @ self.Y
+        e1, e2 = U1 @ E, U2 @ E
+
+        plt.scatter(y1, y2, label="pixel")
+        plt.scatter(e1, e2, label="endmember")
+        plt.title(title)
+        plt.legend(frameon=True)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        if display:
+            plt.show()
+        else:
+            figname = f"{self.shortname}-"
+            figname += "GT_" if E0 is None else ""
+            figname += f"PCA-{run}.png"
+            plt.savefig(os.path.join(self.figs_dir, figname))
             plt.close()
 
 
 if __name__ == "__main__":
-    hsi = HSI(
-        "APEX4.mat",
-        normalizer="GlobalMinMax",
-        setter="DecompSimplex",
-    )
-    print(hsi)
-    # hsi.plot_abundances()
-    # hsi.plot_contributions(hsi.A)
+    pass
