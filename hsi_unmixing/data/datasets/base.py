@@ -340,23 +340,28 @@ class HSI:
         title = f"{self.shortname} 2D PCA-projected data manifold"
         xlabel = "PC #1"
         ylabel = "PC #2"
-        if E0 is None:
-            E = np.copy(self.E)
-            title += " - GT"
-        else:
-            assert self.E.shape == E0.shape
-            E = np.copy(E0)
-            title += " - Estimated endmembers"
+        # if E0 is None:
+        #     E = np.copy(self.E)
+        #     title += " - GT"
+        # else:
+        #     assert self.E.shape == E0.shape
+        #     E = np.copy(E0)
+        #     title += " - Estimated endmembers"
 
+        logger.info("Computing SVD...")
         U, _, _ = LA.svd(self.Y, full_matrices=True)
 
         U1, U2 = U[0], U[1]
 
         y1, y2 = U1 @ self.Y, U2 @ self.Y
-        e1, e2 = U1 @ E, U2 @ E
+        e1, e2 = U1 @ self.E, U2 @ self.E
 
         plt.scatter(y1, y2, label="pixel")
-        plt.scatter(e1, e2, label="endmember")
+        plt.scatter(e1, e2, label="GT endmember")
+        if E0 is not None:
+            assert self.E.shape == E0.shape
+            x1, x2 = U1 @ E0, U2 @ E0
+            plt.scatter(x1, x2, label="Est. endmember")
         plt.title(title)
         plt.legend(frameon=True)
         plt.xlabel(xlabel)
