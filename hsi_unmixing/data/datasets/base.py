@@ -349,7 +349,7 @@ class HSI:
         #     title += " - Estimated endmembers"
 
         logger.info("Computing SVD...")
-        U, _, _ = LA.svd(self.Y, full_matrices=True)
+        U, _, _ = LA.svd(self.Y, full_matrices=False)
 
         U1, U2 = U[0], U[1]
 
