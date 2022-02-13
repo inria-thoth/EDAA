@@ -119,7 +119,7 @@ class RunAggregator:
     def add_run(self, run, X, Xhat, labels):
 
         d = {}
-        d["Avg"] = self.metric(X, Xhat)
+        d["Overall"] = self.metric(X, Xhat)
         for ii, label in enumerate(labels):
             if self.use_endmembers:
                 x, xhat = X[:, ii][:, None], Xhat[:, ii][:, None]
