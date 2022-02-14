@@ -297,16 +297,16 @@ class AlternatingEDA:
 
         return self.E, self.A
 
-    @staticmethod
-    def update(a, b):
-        m, _ = torch.max(b, dim=0, keepdim=True)
-        num = a * torch.exp(b - m)
-        denom = torch.sum(num, dim=0, keepdim=True)
-        return num / denom
-
     # @staticmethod
     # def update(a, b):
-    #     return F.softmax(torch.log(a) + b, dim=0)
+    #     m, _ = torch.max(b, dim=0, keepdim=True)
+    #     num = a * torch.exp(b - m)
+    #     denom = torch.sum(num, dim=0, keepdim=True)
+    #     return num / denom
+
+    @staticmethod
+    def update(a, b):
+        return F.softmax(torch.log(a) + b, dim=0)
 
     @staticmethod
     def get_steps_from_scheme(eta0: float, scheme: str, K: int):
