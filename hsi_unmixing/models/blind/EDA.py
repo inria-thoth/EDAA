@@ -128,6 +128,7 @@ class AlternatingEDA:
         nb_alternating=10,
         device=None,
         use_projection=False,
+        denoise=False,
     ):
         """
         eta0A: `float`
@@ -160,6 +161,7 @@ class AlternatingEDA:
             else device
         )
         self.use_projection = use_projection
+        self.denoise = denoise
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -196,7 +198,7 @@ class AlternatingEDA:
 
         # Compute projection to (p - 1)-subspace here
         if self.use_projection:
-            pdb.set_trace()
+            # pdb.set_trace()
             logger.debug(f"Y shape before projection: {Y.shape}")
             # center Y
             meanY = Y.mean(1, keepdims=True)
@@ -205,6 +207,12 @@ class AlternatingEDA:
             U = torch.linalg.svd(diagY, full_matrices=False)[0][:, : p - 1]
             Y = U.t() @ Y
             logger.debug(f"Y shape after projection: {Y.shape}")
+
+        if self.denoise:
+            # pdb.set_trace()
+            logger.debug(f"Denoise data using SVD")
+            U = torch.linalg.svd(Y, full_matrices=False)[0][:, :p]
+            Y = U @ U.t() @ Y
 
         # Inner functions
         def f(a, b):
