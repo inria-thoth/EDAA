@@ -22,6 +22,11 @@ class Urban6Dataset(HSI):
         super().__init__("Urban6.mat", **kwargs)
 
 
+class Urban4RadiusDataset(HSI):
+    def __init__(self, radius, **kwargs):
+        super().__init__(f"Urban4_r{radius}.mat", **kwargs)
+
+
 if __name__ == "__main__":
     hsi4 = Urban4Dataset()
     print(hsi4)
