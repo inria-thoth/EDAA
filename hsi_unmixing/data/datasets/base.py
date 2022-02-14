@@ -54,6 +54,7 @@ class HSI:
         # Normalizer = normalizers.__dict__[normalizer]()
         if normalizer is not None:
             self.Y = normalizer.transform(self.Y)
+            self.scaledE = normalizer.transform(self.E)
 
         try:
             assert len(self.labels) == self.p
@@ -210,7 +211,11 @@ class HSI:
                     curr_ax = ax[jj]
                 else:
                     curr_ax = ax[ii, jj]
-                curr_ax.imshow(A[kk, :, :], vmin=0.0, vmax=1.0)
+                curr_ax.imshow(
+                    A[kk, :, :],
+                    # vmin=0.0,
+                    # vmax=1.0,
+                )
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
                 kk += 1
@@ -309,8 +314,8 @@ class HSI:
                 curr_ax.imshow(
                     X[kk, :, :],
                     cmap="inferno",
-                    vmin=0.0,
-                    vmax=1.0,
+                    # vmin=0.0,
+                    # vmax=1.0,
                 )
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
@@ -354,14 +359,14 @@ class HSI:
         U1, U2 = U[0], U[1]
 
         y1, y2 = U1 @ self.Y, U2 @ self.Y
-        e1, e2 = U1 @ self.E, U2 @ self.E
+        e1, e2 = U1 @ self.scaledE, U2 @ self.scaledE
 
         plt.scatter(y1, y2, label="pixel")
         plt.scatter(e1, e2, label="GT endmember")
         if E0 is not None:
-            assert self.E.shape == E0.shape
+            assert self.scaledE.shape == E0.shape
             x1, x2 = U1 @ E0, U2 @ E0
-            plt.scatter(x1, x2, label="Est. endmember")
+            plt.scatter(x1, x2, c="red", label="Est. endmember")
         plt.title(title)
         plt.legend(frameon=True)
         plt.xlabel(xlabel)
