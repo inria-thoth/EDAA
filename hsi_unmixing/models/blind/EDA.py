@@ -1,3 +1,4 @@
+import cProfile
 import logging
 import pdb
 import time
@@ -126,6 +127,7 @@ class AlternatingEDA:
         schemeB="sqrt-simple",
         nb_alternating=10,
         device=None,
+        use_projection=False,
     ):
         """
         eta0A: `float`
@@ -157,6 +159,7 @@ class AlternatingEDA:
             if device is None
             else device
         )
+        self.use_projection = use_projection
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -191,6 +194,17 @@ class AlternatingEDA:
         # YtY = Y.t() @ Y
         # Id = torch.eye(N)
 
+        # Compute projection to (p - 1)-subspace here
+        if self.use_projection:
+            logger.debug(f"Y shape before projection: {Y.shape}")
+            # center Y
+            meanY = Y.mean(1, keepdims=True)
+            Y -= meanY
+            diagY = Y @ Y.t() / N
+            U = torch.linalg.svd(diagY, full_matrices=False)[0][: p - 1]
+            Y = U @ Y
+            logger.debug(f"Y shape after projection: {Y.shape}")
+
         # Inner functions
         def f(a, b):
             return 0.5 * ((Y - Y @ b @ a) ** 2).sum()
@@ -215,8 +229,6 @@ class AlternatingEDA:
         # B = torch.linalg.pinv(Y) @ E
         # B = F.softmax(torch.linalg.pinv(Y) @ E, dim=0)
 
-        # pdb.set_trace()
-
         if self.A_init == "softmax":
             A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
         elif self.A_init == "uniform":
@@ -224,7 +236,7 @@ class AlternatingEDA:
         else:
             raise NotImplementedError
 
-        logger.debug(f"Loss: {f(A, B):.6f} [0]")
+        logger.debug(f"Initial loss: {f(A, B):.6f}")
         # print(f"Loss: {f(A, B):.6f} [0]")
 
         # To device
@@ -234,41 +246,52 @@ class AlternatingEDA:
 
         etasA = self.etasA.to(self.device)
         etasB = self.etasB.to(self.device)
+        # eta = etasB[0]
 
-        # Encoding
-        for ii in range(self.nb_alternating):
-            if ii % 2 == 0:
-                for kk in range(self.KA):
-                    A = self.update(
-                        A,
-                        # -self.etasA[kk] / (ii + 1) * grad_A(A, B),
-                        # -self.etasA[kk] * grad_A(A, B),
-                        -etasA[kk] * grad_A(A, B),
-                    )
-                    logger.debug(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
-                    # print(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
+        with torch.no_grad():
+            # Encoding
+            for ii in range(self.nb_alternating):
+                if ii % 2 == 0:
+                    for kk in range(self.KA):
+                        A = self.update(
+                            A,
+                            # -self.etasA[kk] / (ii + 1) * grad_A(A, B),
+                            # -self.etasA[kk] * grad_A(A, B),
+                            -etasA[kk] * grad_A(A, B),
+                        )
+                        # if kk == 0:
+                        #     pass
+                        logger.debug(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
+                        # print(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
 
-                # pdb.set_trace()
-            else:
-                for kk in range(self.KB):
-                    B = self.update(
-                        B,
-                        # -self.etasB[kk] / ii * grad_B(A, B),
-                        # -self.etasB[kk] * grad_B(A, B),
-                        -etasB[kk] * grad_B(A, B),
-                    )
+                else:
+                    for kk in range(self.KB):
+                        B = self.update(
+                            B,
+                            # -self.etasB[kk] / ii * grad_B(A, B),
+                            # -self.etasB[kk] * grad_B(A, B),
+                            -etasB[kk] * grad_B(A, B),
+                            # -eta * grad_B(A, B),
+                        )
 
-                    logger.debug(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
-                    # print(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
-                # pdb.set_trace()
+                        # if kk == 0:
+                        #     pass
+                        logger.debug(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
+                        # print(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
 
         tac = time.time()
         self.time = round(tac - tic, 2)
         logger.info(f"{self} took {self.time:.2f}s")
 
-        # pdb.set_trace()
-        self.Y = (Y @ B @ A).detach().cpu().numpy()
-        self.E = (Y @ B).detach().cpu().numpy()
+        logger.debug(f"Final Loss: {f(A, B):.6f}")
+
+        if self.use_projection:
+            # Go back to the original space
+            self.Y = (U.t() @ (Y @ B @ A).detach().cpu() + meanY).numpy()
+            self.E = (U.t() @ (Y @ B).detach().cpu() + meanY).numpy()
+        else:
+            self.Y = (Y @ B @ A).detach().cpu().numpy()
+            self.E = (Y @ B).detach().cpu().numpy()
         self.A = A.detach().cpu().numpy()
         self.Xmap = B.t().detach().cpu().numpy()
 
@@ -280,6 +303,10 @@ class AlternatingEDA:
         num = a * torch.exp(b - m)
         denom = torch.sum(num, dim=0, keepdim=True)
         return num / denom
+
+    # @staticmethod
+    # def update(a, b):
+    #     return F.softmax(torch.log(a) + b, dim=0)
 
     @staticmethod
     def get_steps_from_scheme(eta0: float, scheme: str, K: int):

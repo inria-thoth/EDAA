@@ -8,3 +8,4 @@ schemeA: "sqrt-simple"
 schemeB: "sqrt-simple"
 nb_alternating: 100
 device: Null
+use_projection: False
