@@ -196,13 +196,14 @@ class AlternatingEDA:
 
         # Compute projection to (p - 1)-subspace here
         if self.use_projection:
+            pdb.set_trace()
             logger.debug(f"Y shape before projection: {Y.shape}")
             # center Y
             meanY = Y.mean(1, keepdims=True)
             Y -= meanY
             diagY = Y @ Y.t() / N
-            U = torch.linalg.svd(diagY, full_matrices=False)[0][: p - 1]
-            Y = U @ Y
+            U = torch.linalg.svd(diagY, full_matrices=False)[0][:, : p - 1]
+            Y = U.t() @ Y
             logger.debug(f"Y shape after projection: {Y.shape}")
 
         # Inner functions
@@ -287,8 +288,8 @@ class AlternatingEDA:
 
         if self.use_projection:
             # Go back to the original space
-            self.Y = (U.t() @ (Y @ B @ A).detach().cpu() + meanY).numpy()
-            self.E = (U.t() @ (Y @ B).detach().cpu() + meanY).numpy()
+            self.Y = (U @ (Y @ B @ A).detach().cpu() + meanY).numpy()
+            self.E = (U @ (Y @ B).detach().cpu() + meanY).numpy()
         else:
             self.Y = (Y @ B @ A).detach().cpu().numpy()
             self.E = (Y @ B).detach().cpu().numpy()
