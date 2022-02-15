@@ -123,6 +123,7 @@ class AlternatingEDA:
         KA=500,
         KB=50,
         A_init="softmax",
+        B_init="random",
         schemeA="sqrt-simple",
         schemeB="sqrt-simple",
         nb_alternating=10,
@@ -152,6 +153,7 @@ class AlternatingEDA:
         self.KA = KA
         self.KB = KB
         self.A_init = A_init
+        self.B_init = B_init
         self.etasA = self.get_steps_from_scheme(eta0A, schemeA, KA)
         self.etasB = self.get_steps_from_scheme(eta0B, schemeB, KB)
         self.nb_alternating = nb_alternating
@@ -171,6 +173,8 @@ class AlternatingEDA:
         self,
         Y,
         p,
+        seed,
+        E0=None,
         *args,
         **kwargs,
     ):
@@ -193,8 +197,16 @@ class AlternatingEDA:
         # Sanity checks
         L, N = Y.shape
 
+        # Fix seed
+        torch.manual_seed(seed)
+
         # YtY = Y.t() @ Y
         # Id = torch.eye(N)
+        if self.denoise:
+            # pdb.set_trace()
+            logger.debug(f"Denoise data using SVD")
+            U = torch.linalg.svd(Y, full_matrices=False)[0][:, :p]
+            Y = U @ U.t() @ Y
 
         # Compute projection to (p - 1)-subspace here
         if self.use_projection:
@@ -207,12 +219,6 @@ class AlternatingEDA:
             U = torch.linalg.svd(diagY, full_matrices=False)[0][:, : p - 1]
             Y = U.t() @ Y
             logger.debug(f"Y shape after projection: {Y.shape}")
-
-        if self.denoise:
-            # pdb.set_trace()
-            logger.debug(f"Denoise data using SVD")
-            U = torch.linalg.svd(Y, full_matrices=False)[0][:, :p]
-            Y = U @ U.t() @ Y
 
         # Inner functions
         def f(a, b):
@@ -229,7 +235,22 @@ class AlternatingEDA:
 
         # Initialization
         # B = F.softmax(torch.ones(N, p) + 0.01 * torch.randn(N, p), dim=0)
-        B = F.softmax(torch.randn(N, p), dim=0)
+        if self.B_init == "random":
+            B = F.softmax(torch.randn(N, p), dim=0)
+        elif self.B_init == "uniform":
+            B = torch.ones(N, p) / N
+        elif self.B_init == "indices":
+            indices = torch.randint(0, high=N - 1, size=(p,))
+            E = Y[:, indices]
+            B = F.softmax(torch.linalg.solve(Y, E), dim=0)
+        elif self.B_init == "init":
+            if E0 is not None:
+                E0 = torch.Tensor(E0)
+                if self.use_projection:
+                    E0 = U.t() @ E0
+            B = F.softmax(torch.linalg.solve(Y, E0), dim=0)
+        else:
+            raise NotImplementedError
         # B = torch.eye(N, m=p)
         # B = torch.ones(N, p) / N
         # indices = torch.randint(0, high=N - 1, size=(p,))
@@ -242,6 +263,8 @@ class AlternatingEDA:
             A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
         elif self.A_init == "uniform":
             A = torch.ones(p, N) / p
+        elif self.A_init == "random":
+            A = F.softmax(torch.randn(p, N), dim=0)
         else:
             raise NotImplementedError
 
@@ -256,10 +279,24 @@ class AlternatingEDA:
         etasA = self.etasA.to(self.device)
         etasB = self.etasB.to(self.device)
         # eta = etasB[0]
-
         with torch.no_grad():
             # Encoding
             for ii in range(self.nb_alternating):
+                if ii % 100 == 50:
+                    MA = B.t() @ Y.t() @ Y @ B
+                    MB = Y.t() @ Y @ A.t() @ A
+                    etasA = self.compute_etas(
+                        M=MA,
+                        dim=p,
+                        K=self.KA,
+                        device=self.device,
+                    )
+                    etasB = self.compute_etas(
+                        M=MB,
+                        dim=N,
+                        K=self.KB,
+                        device=self.device,
+                    )
                 if ii % 2 == 0:
                     for kk in range(self.KA):
                         A = self.update(
@@ -318,7 +355,11 @@ class AlternatingEDA:
         return F.softmax(torch.log(a) + b, dim=0)
 
     @staticmethod
-    def get_steps_from_scheme(eta0: float, scheme: str, K: int):
+    def get_steps_from_scheme(
+        eta0: float,
+        scheme: str,
+        K: int,
+    ):
         if scheme == "sqrt-simple":
             etas = eta0 / torch.sqrt(
                 torch.arange(
@@ -332,6 +373,22 @@ class AlternatingEDA:
             raise NotImplementedError
 
         return etas
+
+    @staticmethod
+    def compute_etas(M, dim, K, device):
+        logger.debug("Computing eta...")
+        num = torch.sqrt(2 * torch.log(torch.Tensor([dim]))).to(device)
+        Lf = torch.linalg.svdvals(M)[0]
+        logger.debug(f"Lf: {Lf:.3f}")
+        denom = Lf * torch.sqrt(
+            torch.arange(
+                start=1,
+                end=K + 1,
+            ).to(device)
+        )
+        ret = num / denom
+        logger.debug(f"First 10 steps: {ret[:10]}")
+        return ret
 
 
 def check_f():
