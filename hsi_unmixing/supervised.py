@@ -29,12 +29,12 @@ def main(cfg):
         )
         hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
 
+        E0 = initializer.init_like(hsi, seed=run)
+
         if run == 0:
             hsi.plot_endmembers(display=cfg.display)
             hsi.plot_abundances(display=cfg.display)
-            # hsi.plot_PCA(display=cfg.display)
-
-        E0 = initializer.init_like(hsi, seed=run)
+            hsi.plot_PCA(display=cfg.display, E0=E0, initializer=True)
 
         aligner = instantiate(
             cfg.aligner,
@@ -56,6 +56,11 @@ def main(cfg):
         RMSE.add_run(run, hsi.A, A0, hsi.labels)
         SAD.add_run(run, hsi.E, E1, hsi.labels)
 
+        hsi.plot_endmembers(
+            E0=E1,
+            display=cfg.display,
+            run=run,
+        )
         hsi.plot_abundances(
             A0=A0,
             display=cfg.display,
@@ -64,6 +69,7 @@ def main(cfg):
         hsi.plot_PCA(
             E0=E1,
             display=cfg.display,
+            run=run,
         )
 
     RMSE.aggregate()

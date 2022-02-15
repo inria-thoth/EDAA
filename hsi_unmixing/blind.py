@@ -30,12 +30,12 @@ def main(cfg):
         )
         hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
 
+        E0 = initializer.init_like(hsi, seed=run)
+
         if run == 0:
             hsi.plot_endmembers(display=cfg.display)
             hsi.plot_abundances(display=cfg.display)
-            hsi.plot_PCA(display=cfg.display)
-
-        E0 = initializer.init_like(hsi, seed=run)
+            hsi.plot_PCA(display=cfg.display, E0=E0, initializer=True)
 
         aligner = instantiate(
             cfg.aligner,
@@ -47,9 +47,11 @@ def main(cfg):
         E0, A0 = model.solve(
             Y,
             hsi.p,
-            E0=E0,
+            # E0=E0,
+            E0=None,
             H=hsi.H,
             W=hsi.W,
+            seed=run,
         )
 
         E1 = aligner.fit_transform(E0)

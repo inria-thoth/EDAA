@@ -139,7 +139,7 @@ class HSI:
         ylabel = "Reflectance"
         xlabel = "# Bands"
         if E0 is None:
-            E = np.copy(self.E)
+            E = np.copy(self.scaledE)
             title += " GT Endmembers"
             linestyle = "-"
         else:
@@ -147,14 +147,14 @@ class HSI:
             E = np.copy(E0)
             title += " Estimated Endmembers"
             linestyle = "--"
-        if normalize:
-            title += " ($l_\infty$-normalized)"
-            ylabel += " Normalized"
+        # if normalize:
+        #     title += " ($l_\infty$-normalized)"
+        #     ylabel += " Normalized"
         plt.figure(figsize=(12, 4))
         for pp in range(self.p):
             data = E[:, pp]
-            if normalize:
-                data /= E[:, pp].max()
+            # if normalize:
+            #     data /= E[:, pp].max()
             plt.plot(data, label=self.labels[pp], linestyle=linestyle)
         plt.title(title)
         plt.legend(frameon=True)
@@ -164,8 +164,10 @@ class HSI:
             plt.show()
         else:
             figname = f"{self.shortname}-"
-            figname += "GT_" if E0 is None else ""
-            figname += f"endmembers-{run}.png"
+            # figname += "GT_" if E0 is None else ""
+            figname += f"endmembers-{run}-"
+            figname += "GT" if E0 is None else ""
+            figname += ".png"
             plt.savefig(os.path.join(self.figs_dir, figname))
             plt.close()
 
@@ -228,8 +230,9 @@ class HSI:
             plt.show()
         else:
             figname = f"{self.shortname}-"
-            figname += "GT_" if A0 is None else ""
-            figname += f"abundances-{run}.png"
+            figname += f"abundances-{run}-"
+            figname += "GT" if A0 is None else ""
+            figname += ".png"
             path = os.path.join(self.figs_dir, figname)
             plt.savefig(path)
             plt.close()
@@ -338,6 +341,7 @@ class HSI:
         E0=None,
         display=True,
         run=0,
+        initializer=False,
     ):
         """
         Plot 2D PCA-projected data manifold
@@ -366,7 +370,10 @@ class HSI:
         if E0 is not None:
             assert self.scaledE.shape == E0.shape
             x1, x2 = U1 @ E0, U2 @ E0
-            plt.scatter(x1, x2, c="red", label="Est. endmember")
+            if initializer:
+                plt.scatter(x1, x2, c="black", label="initializer")
+            else:
+                plt.scatter(x1, x2, c="red", label="Est. endmember")
         plt.title(title)
         plt.legend(frameon=True)
         plt.xlabel(xlabel)
@@ -375,8 +382,9 @@ class HSI:
             plt.show()
         else:
             figname = f"{self.shortname}-"
-            figname += "GT_" if E0 is None else ""
-            figname += f"PCA-{run}.png"
+            figname += f"PCA-{run}-"
+            figname += "GT" if E0 is None or initializer else ""
+            figname += ".png"
             plt.savefig(os.path.join(self.figs_dir, figname))
             plt.close()
 
