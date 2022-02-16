@@ -5,6 +5,7 @@ import time
 # import hsi_unmixing.models.metrics as criterions
 import numpy as np
 from hungarian_algorithm import algorithm as HA
+from munkres import Munkres
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -170,6 +171,46 @@ class HungarianAlgorithmAligner(BaseAligner):
             pair, weight = result
             _from, _to_label = pair
             P[int(_from), int(self.reverse_labels[_to_label])] = 1.0
+
+        self.P = P
+
+
+class MunkresAligner(BaseAligner):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def fit(self, E):
+        """
+        Alignment based on distances matrix using Hungarian Algorithm
+
+        Parameters:
+            E: `numpy array`
+                2D matrix of endmembers (L x p)
+
+        Records:
+            dists: `numpy array`
+                2D distance matrix between estimated and GT endmembers (p x p)
+
+            P: `numpy array`
+                2D permutation matrix (p x p)
+            Permutes the columns to align the endmembers
+            according to ground truth
+
+        Source: https://software.clapper.org/munkres/
+        """
+
+        # Computing distance matrix
+        self.dists = self.criterion(E, self.Eref)
+
+        # Initialization
+        p = E.shape[1]
+        P = np.zeros((p, p))
+        self.P = None
+
+        m = Munkres()
+        indexes = m.compute(self.dists)
+        for row, col in indexes:
+            P[row, col] = 1.0
 
         self.P = P
 
