@@ -129,7 +129,9 @@ class AlternatingEDA:
         nb_alternating=10,
         device=None,
         use_projection=False,
+        entropic_regularization=False,
         denoise=False,
+        epsilon=1e-3,
     ):
         """
         eta0A: `float`
@@ -160,10 +162,12 @@ class AlternatingEDA:
         self.device = (
             torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             if device is None
-            else device
+            else torch.device(device)
         )
         self.use_projection = use_projection
         self.denoise = denoise
+        self.entropic_regularization = entropic_regularization
+        self.epsilon = epsilon
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -225,18 +229,26 @@ class AlternatingEDA:
             return 0.5 * ((Y - Y @ b @ a) ** 2).sum()
 
         def grad_A(a, b):
-            return -b.t() @ Y.t() @ (Y - Y @ b @ a)
+            fit_term = -b.t() @ Y.t() @ (Y - Y @ b @ a)
+            if self.entropic_regularization:
+                return fit_term + self.epsilon * (torch.log(a) + ones_pN)
+                # return fit_term + self.epsilon * torch.log(a)
+            else:
+                return fit_term
             # return -b.t() @ YtY @ (Id - b @ a)
 
         def grad_B(a, b):
             # return -Y.t() @ Y @ a.t() + Y.t() @ Y @ b @ a @ a.t()
-            return -Y.t() @ (Y - Y @ b @ a) @ a.t()
+            # pdb.set_trace()
+            return -Y.t() @ ((Y - Y @ b @ a) @ a.t())
             # return -YtY @ (Id - b @ a) @ a.t()
 
         # Initialization
         # B = F.softmax(torch.ones(N, p) + 0.01 * torch.randn(N, p), dim=0)
-        if self.B_init == "random":
+        if self.B_init == "randn":
             B = F.softmax(torch.randn(N, p), dim=0)
+        elif self.B_init == "rand":
+            B = F.softmax(torch.rand(N, p), dim=0)
         elif self.B_init == "uniform":
             B = torch.ones(N, p) / N
         elif self.B_init == "indices":
@@ -249,6 +261,13 @@ class AlternatingEDA:
                 if self.use_projection:
                     E0 = U.t() @ E0
             B = F.softmax(torch.linalg.solve(Y, E0), dim=0)
+        elif self.B_init == "pSVD":
+            # pdb.set_trace()
+            _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
+            Vhp = Vh[:p]
+            S_inv = torch.linalg.inv(torch.diag(S[:p]))
+            B0 = Vhp.t() @ S_inv
+            B = F.softmax(B0, dim=0)
         else:
             raise NotImplementedError
         # B = torch.eye(N, m=p)
@@ -275,28 +294,34 @@ class AlternatingEDA:
         Y = Y.to(self.device)
         A = A.to(self.device)
         B = B.to(self.device)
+        ones_pN = torch.ones(p, N, device=self.device)
 
         etasA = self.etasA.to(self.device)
         etasB = self.etasB.to(self.device)
+
+        # etasA = 1.0 / p
+        # etasA = 1.0 / p
+        # etasB = 1.0 / N
+
         # eta = etasB[0]
         with torch.no_grad():
             # Encoding
             for ii in range(self.nb_alternating):
-                if ii % 100 == 50:
-                    MA = B.t() @ Y.t() @ Y @ B
-                    MB = Y.t() @ Y @ A.t() @ A
-                    etasA = self.compute_etas(
-                        M=MA,
-                        dim=p,
-                        K=self.KA,
-                        device=self.device,
-                    )
-                    etasB = self.compute_etas(
-                        M=MB,
-                        dim=N,
-                        K=self.KB,
-                        device=self.device,
-                    )
+                # if ii % 100 == 50:
+                #     MA = B.t() @ Y.t() @ Y @ B
+                #     MB = Y.t() @ Y @ A.t() @ A
+                #     etasA = self.compute_etas(
+                #         M=MA,
+                #         dim=p,
+                #         K=self.KA,
+                #         device=self.device,
+                #     )
+                #     etasB = self.compute_etas(
+                #         M=MB,
+                #         dim=N,
+                #         K=self.KB,
+                #         device=self.device,
+                #     )
                 if ii % 2 == 0:
                     for kk in range(self.KA):
                         A = self.update(
@@ -304,6 +329,7 @@ class AlternatingEDA:
                             # -self.etasA[kk] / (ii + 1) * grad_A(A, B),
                             # -self.etasA[kk] * grad_A(A, B),
                             -etasA[kk] * grad_A(A, B),
+                            # -etasA * grad_A(A, B),
                         )
                         # if kk == 0:
                         #     pass
@@ -317,7 +343,7 @@ class AlternatingEDA:
                             # -self.etasB[kk] / ii * grad_B(A, B),
                             # -self.etasB[kk] * grad_B(A, B),
                             -etasB[kk] * grad_B(A, B),
-                            # -eta * grad_B(A, B),
+                            # -etasB * grad_B(A, B),
                         )
 
                         # if kk == 0:
