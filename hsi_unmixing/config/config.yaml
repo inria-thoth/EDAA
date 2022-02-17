@@ -1,17 +1,17 @@
 mode: "supervised"
 seed: 0
 SNR: Null
-runs: 10
+runs: 1
 display: False
 torch: False
 
 defaults:
   - dataset : SDC
-  - normalizer: GlobalMinMax
+  - normalizer: PixelwiseL2Norm
   - setter: DS
   - initializer: VCA
   - model: DS
-  - aligner: greedy
+  - aligner: munkres
   - noise: AWGN
   - criterion: MAE
   - _self_
