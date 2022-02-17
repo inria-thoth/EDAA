@@ -1,4 +1,5 @@
-from .APEX import APEX4Dataset, APEX6Dataset, TinyAPEXDataset
+from .APEX import (APEX4Dataset, APEX4OldDataset, APEX6Dataset,
+                   APEX6OldDataset, TinyAPEXDataset)
 from .Cuprite import CupriteDataset
 from .JasperRidge import JasperRidgeDataset
 from .Samson import SamsonDataset, SamsonFixedDataset

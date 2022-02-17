@@ -19,6 +19,16 @@ class APEX6Dataset(HSI):
         super().__init__("APEX6fixed.mat", **kwargs)
 
 
+class APEX4OldDataset(HSI):
+    def __init__(self, **kwargs):
+        super().__init__("APEX4.mat", **kwargs)
+
+
+class APEX6OldDataset(HSI):
+    def __init__(self, **kwargs):
+        super().__init__("APEX6.mat", **kwargs)
+
+
 class TinyAPEXDataset(HSI):
     def __init__(self, **kwargs):
         super().__init__("TinyAPEX.mat", **kwargs)
