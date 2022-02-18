@@ -213,13 +213,19 @@ class HSI:
                     curr_ax = ax[jj]
                 else:
                     curr_ax = ax[ii, jj]
-                curr_ax.imshow(
+                mappable = curr_ax.imshow(
                     A[kk, :, :],
-                    # vmin=0.0,
-                    # vmax=1.0,
+                    vmin=0.0,
+                    vmax=1.0,
                 )
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
+                fig.colorbar(
+                    mappable,
+                    ax=curr_ax,
+                    location="right",
+                    shrink=0.5,
+                )
                 kk += 1
 
                 if kk == self.p:
@@ -314,7 +320,7 @@ class HSI:
                     curr_ax = ax[jj]
                 else:
                     curr_ax = ax[ii, jj]
-                curr_ax.imshow(
+                mappable = curr_ax.imshow(
                     X[kk, :, :],
                     cmap="inferno",
                     # vmin=0.0,
@@ -322,6 +328,12 @@ class HSI:
                 )
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
+                fig.colorbar(
+                    mappable,
+                    ax=curr_ax,
+                    shrink=0.5,
+                    location="right",
+                )
                 kk += 1
 
                 if kk == self.p:
