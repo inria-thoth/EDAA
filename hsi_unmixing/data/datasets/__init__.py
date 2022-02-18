@@ -3,7 +3,7 @@ from .APEX import (APEX4Dataset, APEX4OldDataset, APEX6Dataset,
 from .Cuprite import CupriteDataset
 from .JasperRidge import JasperRidgeDataset
 from .Samson import SamsonDataset, SamsonFixedDataset
-from .Simulated import (Sim1Dataset, Sim2Dataset,
+from .Simulated import (Sim1Dataset, Sim2Dataset, SimPDataset,
                         SimulatedDataCubesNoPurePixelsDataset,
                         SimulatedDataCubesNoPurePixelsHardDataset)
 from .Urban import (Urban4Dataset, Urban4RadiusDataset, Urban5Dataset,
