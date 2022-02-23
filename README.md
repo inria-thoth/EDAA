@@ -15,7 +15,7 @@ This repository was developed using Ubuntu 20.04 LTS, Python 3.8.8 and MATLAB 20
 We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
 
 ```
-$ conda create --name hsu python=3.8
+$ conda create --name hsu --file conda.txt
 ```
 
 ```
