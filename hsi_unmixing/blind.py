@@ -47,11 +47,13 @@ def main(cfg):
         E0, A0 = model.solve(
             Y,
             hsi.p,
-            # E0=E0,
-            E0=None,
+            E0=E0,
+            # E0=None,
+            hsi=hsi,
             H=hsi.H,
             W=hsi.W,
             seed=run,
+            aligner=aligner,
         )
 
         E1 = aligner.fit_transform(E0)

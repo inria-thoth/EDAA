@@ -1,10 +1,11 @@
-import cProfile
 import logging
 import pdb
 import time
 
 import torch
 import torch.nn.functional as F
+import wandb
+from hsi_unmixing.models.metrics import SADDegrees, aRMSE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -132,6 +133,7 @@ class AlternatingEDA:
         entropic_regularization=False,
         denoise=False,
         epsilon=1e-3,
+        log_every_n_steps=10,
     ):
         """
         eta0A: `float`
@@ -156,8 +158,8 @@ class AlternatingEDA:
         self.KB = KB
         self.A_init = A_init
         self.B_init = B_init
-        self.etasA = self.get_steps_from_scheme(eta0A, schemeA, KA)
-        self.etasB = self.get_steps_from_scheme(eta0B, schemeB, KB)
+        self.etasA = self.get_steps_from_scheme(eta0A, schemeA, self.KA)
+        self.etasB = self.get_steps_from_scheme(eta0B, schemeB, self.KB)
         self.nb_alternating = nb_alternating
         self.device = (
             torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -168,6 +170,22 @@ class AlternatingEDA:
         self.denoise = denoise
         self.entropic_regularization = entropic_regularization
         self.epsilon = epsilon
+        self.log_every_n_steps = log_every_n_steps
+        cfg = {
+            "KA": self.KA,
+            "KB": self.KB,
+            "eta0A": eta0A,
+            "eta0B": eta0B,
+            "eps": self.epsilon,
+            "nb_alternating": nb_alternating,
+        }
+        self.runner = wandb.init(
+            project="HSU",
+            config=cfg,
+            job_type="hparams",
+            name=f"eps{epsilon}_A{eta0A}_B{eta0B}",
+            notes=f"KA{KA}_KB{KB}_eta0A{eta0A}_eta0B{eta0B}_eps{epsilon}_Kglob{nb_alternating}",
+        )
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -178,7 +196,10 @@ class AlternatingEDA:
         Y,
         p,
         seed,
+        hsi,
         E0=None,
+        aligner=None,
+        tol=1e-45,
         *args,
         **kwargs,
     ):
@@ -220,18 +241,57 @@ class AlternatingEDA:
             meanY = Y.mean(1, keepdims=True)
             Y -= meanY
             diagY = Y @ Y.t() / N
-            U = torch.linalg.svd(diagY, full_matrices=False)[0][:, : p - 1]
+            # U = torch.linalg.svd(diagY, full_matrices=False)[0][:, : p - 1]
+            U = torch.linalg.svd(diagY, full_matrices=False)[0][:, :p]
             Y = U.t() @ Y
             logger.debug(f"Y shape after projection: {Y.shape}")
 
         # Inner functions
-        def f(a, b):
+        rmse = aRMSE()
+        sad = SADDegrees()
+
+        E_gt = hsi.E
+        A_gt = hsi.A
+
+        def residual(a, b):
             return 0.5 * ((Y - Y @ b @ a) ** 2).sum()
+
+        def entropy(x):
+            # return -(x * (torch.log(x) - 1)).sum()
+            # pdb.set_trace()
+            ret = torch.where(
+                x > tol,
+                -(x * (torch.log(x) - 1)).to(torch.float64),
+                0.0,
+            ).sum()
+            return ret
+
+        # def f(a, b):
+        #     fit_term = 0.5 * ((Y - Y @ b @ a) ** 2).sum()
+        #     if self.entropic_regularization:
+        #         # entropy = self.epsilon * (a * (torch.log(a) - 1)).sum()
+        #         entropy = (a * (torch.log(a) - 1)).sum()
+        #         logger.debug(f"\tEntropy: {entropy:.6f}")
+        #         return fit_term - self.epsilon * entropy
+        #     else:
+        #         return fit_term
+
+        if self.entropic_regularization:
+
+            def loss(a, b):
+                return residual(a, b) + self.epsilon * entropy(a)
+
+        else:
+
+            def loss(a, b):
+                return residual(a, b)
 
         def grad_A(a, b):
             fit_term = -b.t() @ Y.t() @ (Y - Y @ b @ a)
             if self.entropic_regularization:
-                return fit_term + self.epsilon * (torch.log(a) + ones_pN)
+                # return fit_term + self.epsilon * (torch.log(a) + ones_pN)
+                return fit_term - self.epsilon * (torch.log(a) - 1)
+                # return fit_term - self.epsilon * (torch.log(a) + 1)
                 # return fit_term + self.epsilon * torch.log(a)
             else:
                 return fit_term
@@ -239,7 +299,6 @@ class AlternatingEDA:
 
         def grad_B(a, b):
             # return -Y.t() @ Y @ a.t() + Y.t() @ Y @ b @ a @ a.t()
-            # pdb.set_trace()
             return -Y.t() @ ((Y - Y @ b @ a) @ a.t())
             # return -YtY @ (Id - b @ a) @ a.t()
 
@@ -254,20 +313,30 @@ class AlternatingEDA:
         elif self.B_init == "indices":
             indices = torch.randint(0, high=N - 1, size=(p,))
             E = Y[:, indices]
-            B = F.softmax(torch.linalg.solve(Y, E), dim=0)
+            # B = F.softmax(torch.linalg.solve(Y, E), dim=0)
+            B = F.softmax(torch.linalg.pinv(Y) @ E, dim=0)
         elif self.B_init == "init":
             if E0 is not None:
                 E0 = torch.Tensor(E0)
                 if self.use_projection:
                     E0 = U.t() @ E0
-            B = F.softmax(torch.linalg.solve(Y, E0), dim=0)
-        elif self.B_init == "pSVD":
             # pdb.set_trace()
+            # B = F.softmax(torch.linalg.solve(Y, E0), dim=0)
+            B = F.softmax(torch.linalg.pinv(Y) @ E0, dim=0)
+        elif self.B_init == "pSVD":
             _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
             Vhp = Vh[:p]
             S_inv = torch.linalg.inv(torch.diag(S[:p]))
             B0 = Vhp.t() @ S_inv
             B = F.softmax(B0, dim=0)
+        elif self.B_init == "pSVD_l1":
+            _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
+            Vhp = Vh[:p]
+            S_inv = torch.linalg.inv(torch.diag(S[:p]))
+            B0 = Vhp.t() @ S_inv
+            # pdb.set_trace()
+            # L1 projection
+            B = torch.abs(B0) / torch.sum(torch.abs(B0), dim=0, keepdims=True)
         else:
             raise NotImplementedError
         # B = torch.eye(N, m=p)
@@ -287,23 +356,59 @@ class AlternatingEDA:
         else:
             raise NotImplementedError
 
-        logger.debug(f"Initial loss: {f(A, B):.6f}")
         # print(f"Loss: {f(A, B):.6f} [0]")
 
         # To device
         Y = Y.to(self.device)
         A = A.to(self.device)
         B = B.to(self.device)
-        ones_pN = torch.ones(p, N, device=self.device)
+        # ones_pN = torch.ones(p, N, device=self.device)
 
         etasA = self.etasA.to(self.device)
         etasB = self.etasB.to(self.device)
 
-        # etasA = 1.0 / p
+        initial_loss_value = round(loss(A, B).item(), 2)
+        initial_residual_value = round(residual(A, B).item(), 2)
+        initial_entropy_value = round(entropy(A).item(), 2)
+        logger.debug(f"Initial loss: {initial_loss_value}")
+        E0 = (Y @ B).detach().cpu().numpy()
+        E1 = aligner.fit_transform(E0)
+        A0 = A.detach().cpu().numpy()
+        A1 = aligner.transform_abundances(A0)
+        sad_value = round(sad(E1, E_gt), 2)
+        rmse_value = round(rmse(A1, A_gt), 2)
+        self.runner.log(
+            {
+                "loss": initial_loss_value,
+                "RMSE": rmse_value,
+                "SAD": sad_value,
+                "residual": initial_residual_value,
+                "entropy": initial_entropy_value,
+            }
+        )
         # etasA = 1.0 / p
         # etasB = 1.0 / N
 
+        # symA = B.t() @ Y.t() @ Y @ B
+        # eigvalA_max = torch.linalg.eigvalsh(symA)[-1]
+        # logger.debug(f"Max. eigval for symA => {eigvalA_max}")
+        # etasA = 1.0 / eigvalA_max
+        # logger.debug(f"etasA: {etasA}")
+
+        # symB0 = A @ Y.t() @ Y @ A.t()
+        # symB1 = A @ A.t()
+        # symB2 = Y @ Y.t()
+        # eigvalB0_max = torch.linalg.eigvalsh(symB0)[-1]
+        # eigvalB1_max = torch.linalg.eigvalsh(symB1)[-1]
+        # eigvalB2_max = torch.linalg.eigvalsh(symB2)[-1]
+        # logger.debug(f"Max. eigval for symB0 => {eigvalB0_max}")
+        # logger.debug(f"Max. eigval for symB1 => {eigvalB1_max}")
+        # logger.debug(f"Max. eigval for symB2 => {eigvalB2_max}")
+        # etasB = 1.0 / min(eigvalB0_max, eigvalB1_max, eigvalB2_max)
+        # logger.debug(f"etasB: {etasB}")
+
         # eta = etasB[0]
+        iters = 0
         with torch.no_grad():
             # Encoding
             for ii in range(self.nb_alternating):
@@ -333,8 +438,29 @@ class AlternatingEDA:
                         )
                         # if kk == 0:
                         #     pass
-                        logger.debug(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
+                        if kk % self.log_every_n_steps == 0:
+                            loss_value = round(loss(A, B).item(), 2)
+                            residual_value = round(residual(A, B).item(), 2)
+                            entropy_value = round(entropy(A).item(), 2)
+                            logger.debug(f"Loss: {loss_value} [{ii}|{kk+1}]")
+                            E0 = (Y @ B).detach().cpu().numpy()
+                            E1 = aligner.fit_transform(E0)
+                            A0 = A.detach().cpu().numpy()
+                            A1 = aligner.transform_abundances(A0)
+                            sad_value = round(sad(E1, E_gt), 2)
+                            rmse_value = round(rmse(A1, A_gt), 2)
+                            self.runner.log(
+                                {
+                                    "loss": loss_value,
+                                    "RMSE": rmse_value,
+                                    "SAD": sad_value,
+                                    "residual": residual_value,
+                                    "entropy": entropy_value,
+                                }
+                            )
+
                         # print(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
+                        iters += 1
 
                 else:
                     for kk in range(self.KB):
@@ -348,14 +474,37 @@ class AlternatingEDA:
 
                         # if kk == 0:
                         #     pass
-                        logger.debug(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
                         # print(f"Loss: {f(A, B):.6f} [{ii}|{kk+1}]")
+                        if kk % self.log_every_n_steps == 0:
+                            loss_value = round(loss(A, B).item(), 2)
+                            residual_value = round(residual(A, B).item(), 2)
+                            entropy_value = round(entropy(A).item(), 2)
+                            E0 = (Y @ B).detach().cpu().numpy()
+                            E1 = aligner.fit_transform(E0)
+                            A0 = A.detach().cpu().numpy()
+                            A1 = aligner.transform_abundances(A0)
+                            sad_value = round(sad(E1, E_gt), 2)
+                            rmse_value = round(rmse(A1, A_gt), 2)
+                            logger.debug(f"Loss: {loss_value} [{ii}|{kk+1}]")
+                            self.runner.log(
+                                {
+                                    "loss": loss_value,
+                                    "RMSE": rmse_value,
+                                    "SAD": sad_value,
+                                    "residual": residual_value,
+                                    "entropy": entropy_value,
+                                }
+                            )
+
+                        iters += 1
 
         tac = time.time()
         self.time = round(tac - tic, 2)
         logger.info(f"{self} took {self.time:.2f}s")
 
-        logger.debug(f"Final Loss: {f(A, B):.6f}")
+        loss_value = round(float(loss(A, B)), 6)
+        logger.debug(f"Final Loss: {loss_value}")
+        self.runner.log({"loss": loss_value})
 
         if self.use_projection:
             # Go back to the original space
