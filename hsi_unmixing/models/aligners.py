@@ -37,13 +37,13 @@ class BaseAligner:
         return self.P.T @ A
 
     def fit_transform(self, E):
-        tic = time.time()
+        # tic = time.time()
 
         self.fit(E)
         res = self.transform(E)
 
-        tac = time.time()
-        logger.info(f"{self} took {tac - tic:.2f}s...")
+        # tac = time.time()
+        # logger.debug(f"{self} took {tac - tic:.2f}s...")
 
         return res
 
