@@ -1,0 +1,8 @@
+name: "default"
+filename: "${launcher.name}.sh"
+hours: 12
+gpumodel: Null
+gpumem: Null
+besteffort: False
+idempotent: False
+cmd: "main.py"

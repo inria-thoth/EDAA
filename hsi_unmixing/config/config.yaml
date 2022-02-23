@@ -14,6 +14,8 @@ defaults:
   - aligner: munkres
   - noise: AWGN
   - criterion: MAE
+  - cluster: OAR
+  - launcher: default
   - _self_
 
 
