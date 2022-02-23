@@ -1,5 +1,4 @@
 cvxopt==1.2.7
-hungarian-algorithm==0.1.11
 hydra-core==1.1.1
 matplotlib==3.4.3
 numpy==1.20.1
@@ -8,3 +7,4 @@ pysptools==0.15.0
 python-spams==2.6.1.11
 scipy==1.7.1
 torch==1.10.1
+munkres
