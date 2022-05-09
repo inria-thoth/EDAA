@@ -1,6 +1,7 @@
 _target_: hsi_unmixing.models.blind.AlternatingEDA
-eta0A: 0.1
-eta0B: 0.0001
+epsilon: 5e-3
+eta0A: 1.0
+eta0B: 0.001
 KA: 100
 KB: 100
 A_init: "softmax"
@@ -12,5 +13,5 @@ device: Null
 use_projection: False
 entropic_regularization: False
 denoise: False
-epsilon: 5e-3
 log_every_n_steps: 10
+coef: 1

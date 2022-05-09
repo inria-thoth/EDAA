@@ -131,15 +131,20 @@ class RunAggregator:
 
         self.data[run] = d
 
-    def aggregate(self):
+    def aggregate(self, prefix=None):
         self.df = pd.DataFrame(self.data).T
         self.summary = self.df.describe().round(2)
         logger.info(f"{self.metric} summary:\n{self.summary}")
-        self.save()
+        self.save(prefix)
 
-    def save(self):
-        self.df.to_json(f"runs-{self.filename}")
-        self.summary.to_json(f"summary-{self.filename}")
+    def save(self, prefix=None):
+        prefix = "" if prefix is None else f"{prefix}-"
+
+        df_fname = f"{prefix}runs-{self.filename}"
+        summary_fname = f"{prefix}summary-{self.filename}"
+
+        self.df.to_json(df_fname)
+        self.summary.to_json(summary_fname)
 
 
 class SADAggregator(RunAggregator):
