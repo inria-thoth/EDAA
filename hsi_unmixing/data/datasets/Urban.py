@@ -28,15 +28,31 @@ class Urban4RadiusDataset(HSI):
 
 
 if __name__ == "__main__":
-    hsi4 = Urban4Dataset()
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from hsi_unmixing.data.normalizers import BandwiseMinMax as BMM
+    from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
+    from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
+
+    matplotlib.use("TKAgg")
+
+    # plt.use("TKAgg")
+
+    normalizer = PL2()
+    # normalizer = GMM()
+    # normalizer = BMM()
+    hsi4 = Urban4Dataset(normalizer=normalizer)
     print(hsi4)
+    hsi4.plot_hsi()
+    # hsi5 = Urban5Dataset(normalizer=normalizer)
+    # print(hsi5)
     # hsi4.plot_endmembers(normalize=False)
     # hsi4.plot_abundances(transpose=True)
-    hsi5 = Urban5Dataset()
-    print(hsi5)
-    # hsi5.plot_endmembers(normalize=False)
-    hsi6 = Urban6Dataset()
-    print(hsi6)
-    hsi6.plot_endmembers(normalize=True)
-    hsi6.plot_endmembers(normalize=False)
-    # hsi6.plot_abundances(transpose=True)
+    # hsi5 = Urban5Dataset()
+    # print(hsi5)
+    # # hsi5.plot_endmembers(normalize=False)
+    # hsi6 = Urban6Dataset()
+    # print(hsi6)
+    # hsi6.plot_endmembers(normalize=True)
+    # hsi6.plot_endmembers(normalize=False)
+    # # hsi6.plot_abundances(transpose=True)

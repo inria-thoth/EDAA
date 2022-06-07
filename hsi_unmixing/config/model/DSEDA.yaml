@@ -3,6 +3,7 @@ epsilon: 0
 Ka: 100
 Kb: 1
 T: 50
-Ainit: "soft"
+Ainit: "Bt"
 Binit: "soft"
+centering: False
 

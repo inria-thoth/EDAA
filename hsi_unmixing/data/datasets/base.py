@@ -10,6 +10,7 @@ import scipy.io as sio
 import torch
 from hsi_unmixing import EPS
 from hsi_unmixing.data.noises import AdditiveWhiteGaussianNoise as AWGN
+from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
 from hydra.utils import to_absolute_path
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,10 @@ class HSI:
 
         # Normalize Y
         # Normalizer = normalizers.__dict__[normalizer]()
+        # NOTE: should GMM be applied to the endmembers here too?
+
+        self.Y = GMM().transform(self.Y)
+
         if normalizer is not None:
             self.Y = normalizer.transform(self.Y)
             self.scaledE = normalizer.transform(self.E)
@@ -82,6 +87,7 @@ class HSI:
         # Abundance Non-negative Constraint (ANC)
         assert np.all(self.A >= -EPS)
         # Endmembers Non-negative Constraint
+        self.E = np.maximum(self.E, 0)
         assert np.all(self.E >= -EPS)
 
         # Save figures path
@@ -96,6 +102,9 @@ class HSI:
         msg += f"{self.H} lines, {self.W} samples, ({self.N} pixels),\n"
         msg += f"{self.p} endmembers ({self.labels})\n"
         msg += f"GlobalMinValue: {self.Y.min()}, GlobalMaxValue: {self.Y.max()}\n"
+        sparsity = (self.A <= 0.01).sum() / self.A.size
+        sparsity_printable = round(sparsity, 2)
+        msg += f"Sparsity: {sparsity_printable}\n"
         return msg
 
     def set_GT_abundances(self, setter):
@@ -273,6 +282,7 @@ class HSI:
         # Plot the image
         img = Y.reshape(self.L, self.H, self.W)
         img = img.transpose(1, 2, 0)
+        img = img / img.max()
 
         colors = {key: value for (key, value) in zip("RGB", channels)}
         title = f"{self.shortname} Observation [SNR={SNR}dB]\n"

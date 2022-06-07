@@ -35,20 +35,22 @@ class TinyAPEXDataset(HSI):
 
 
 if __name__ == "__main__":
-    from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
-    # from hsi_unmixing.data.normalizers import PixelwiseL1Norm as PL1
-    from hsi_unmixing.models.supervised import DecompSimplex as DS
+    # from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
+    # # from hsi_unmixing.data.normalizers import PixelwiseL1Norm as PL1
+    # from hsi_unmixing.models.supervised import DecompSimplex as DS
 
-    setter = DS()
-    normalizer = GMM()
-    # normalizer = PL1()
-    hsi = APEX4Dataset(
-        normalizer=normalizer,
-        setter=setter,
-    )
+    # setter = DS()
+    # normalizer = GMM()
+    # # normalizer = PL1()
+    # hsi = APEX4Dataset(
+    #     normalizer=normalizer,
+    #     setter=setter,
+    # )
+    # print(hsi)
+    # hsi.plot_endmembers(normalize=False)
+    # # hsi.plot_hsi(SNR=10)
+    # # hsi.plot_abundances(grid=(2, 3))
+
+    # hsi.plot_abundances()
+    hsi = TinyAPEXDataset()
     print(hsi)
-    hsi.plot_endmembers(normalize=False)
-    # hsi.plot_hsi(SNR=10)
-    # hsi.plot_abundances(grid=(2, 3))
-
-    hsi.plot_abundances()

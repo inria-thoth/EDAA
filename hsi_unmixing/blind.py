@@ -15,7 +15,7 @@ def main(cfg):
     setter = instantiate(cfg.setter)
     normalizer = instantiate(cfg.normalizer)
     initializer = instantiate(cfg.initializer)
-    model = instantiate(cfg.model)
+    # model = instantiate(cfg.model)
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
 
@@ -23,6 +23,7 @@ def main(cfg):
     SAD = SADAggregator()
 
     for run in range(cfg.runs):
+        model = instantiate(cfg.model)
         hsi = instantiate(
             cfg.dataset,
             setter=setter,
@@ -55,6 +56,10 @@ def main(cfg):
             seed=run,
             aligner=aligner,
         )
+
+        sparsity = (A0 <= 0.01).sum() / A0.size
+        sparsity_printable = round(sparsity, 2)
+        logger.info(f"Sparsity => {sparsity_printable}")
 
         E1 = aligner.fit_transform(E0)
         A1 = aligner.transform_abundances(A0)

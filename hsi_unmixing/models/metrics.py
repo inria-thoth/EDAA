@@ -155,3 +155,32 @@ class SADAggregator(RunAggregator):
 class RMSEAggregator(RunAggregator):
     def __init__(self):
         super().__init__(aRMSE(), use_endmembers=False)
+
+
+def sad(x, xhat):
+    x_normed = x / LA.norm(x)
+    xhat_normed = xhat / LA.norm(xhat)
+    return np.arccos(np.dot(x_normed, xhat_normed)) * (180 / np.pi)
+
+
+def check_sad():
+    print("SAD metric sanity check...")
+    vector_SAD = SADDegrees()
+
+    np.random.seed(42)
+
+    fake = np.random.rand(100)
+
+    toy1 = fake + 0.001 * np.random.randn(100)
+    toy2 = -fake
+    toy3 = 2 * fake
+
+    toys = [toy1, toy2, toy3]
+
+    for ii, toy in enumerate(toys):
+        print(sad(fake, toy))
+        print(vector_SAD(fake[:, None], toy[:, None]))
+
+
+if __name__ == "__main__":
+    check_sad()

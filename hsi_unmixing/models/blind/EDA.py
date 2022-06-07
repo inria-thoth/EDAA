@@ -620,6 +620,7 @@ class DSEDA:
         epsilon=1e-3,
         Binit="soft",
         Ainit="soft",
+        centering=False,
         # entropic_reg=True,
         # log_every_n_steps=10,
     ):
@@ -631,6 +632,7 @@ class DSEDA:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.Binit = Binit
         self.Ainit = Ainit
+        self.centering = centering
 
     def solve(
         self,
@@ -641,13 +643,15 @@ class DSEDA:
         aligner=None,
         tol=1e-40,
         timesteps=[20, 50, None],
+        runner_on=True,
         **kwargs,
     ):
 
-        runner = wandb.init(
-            project="HSU",
-            name=f"{hsi.shortname}_{self}_eps{self.epsilon}_Ka{self.Ka}_Kb{self.Kb}",
-        )
+        if runner_on:
+            runner = wandb.init(
+                project="HSU",
+                name=f"{hsi.shortname}_{self}_eps{self.epsilon}_Ka{self.Ka}_Kb{self.Kb}",
+            )
 
         # Fix seed
         torch.manual_seed(seed)
@@ -716,6 +720,12 @@ class DSEDA:
         with torch.no_grad():
             # B init
             # B0 = torch.randn((N, p))
+
+            meanY = Y.mean(1, keepdims=True) if self.centering else 0
+
+            breakpoint()
+            Y -= meanY
+
             _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
             Vhp = Vh[:p]
             S_inv = torch.linalg.inv(torch.diag(S[:p]))
@@ -748,16 +758,27 @@ class DSEDA:
                     numThreads=-1,
                 )
                 A = torch.Tensor(sp.csr_matrix.toarray(W))
+            elif self.Ainit == "deterministic":
+                A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
+            elif self.Ainit == "Bt":
+                A = F.softmax(B.t(), dim=0)
             else:
                 raise NotImplementedError
 
             # Device loading
             Y = Y.to(self.device)
+
+            # meanY = 0
             A = A.to(self.device)
             B = B.to(self.device)
             best_res_c = np.inf
 
             self.etaA = 1.0 / computeLA(A, B)
+            breakpoint()
+            # self.etaA = 1.0
+            # self.etaA = 0.5
+            # self.etaA = 0.1
+            # self.etaA = 0.27
             print(f"eta A value: {self.etaA}")
 
             # Main loop
@@ -776,7 +797,7 @@ class DSEDA:
 
                 if (ii + 1) in timesteps:
                     results[ii + 1] = {
-                        "E": (Y @ B).cpu().numpy(),
+                        "E": ((Y + meanY) @ B).cpu().numpy(),
                         "A": A.cpu().numpy(),
                     }
 
@@ -795,27 +816,34 @@ class DSEDA:
                     self.Xmap = B.t().cpu().numpy()
 
                 loss_value = round(loss(A, B).item(), 2)
-                residual_value = round(residual(A, B).item(), 2)
+                curr_residual = residual(A, B).item()
+                residual_value = round(curr_residual, 2)
+                curr_residual_normed = 2 * curr_residual / (Y ** 2).sum()
+                residual_normed_value = round(curr_residual_normed.item(), 2)
                 entropy_value = round(entropy(A).item(), 2)
                 inpainting_residual = round(res_c, 2)
+                sparsity = round(self.compute_sparsity(A).item(), 2)
 
-                E0 = (Y @ B).cpu().numpy()
+                E0 = ((Y + meanY) @ B).cpu().numpy()
                 E1 = aligner.fit_transform(E0)
                 A0 = A.cpu().numpy()
                 A1 = aligner.transform_abundances(A0)
                 sad_value = round(sad(E1, E_gt), 2)
                 rmse_value = round(rmse(A1, A_gt), 2)
 
-                runner.log(
-                    {
-                        "loss": loss_value,
-                        "residual": residual_value,
-                        "entropy": entropy_value,
-                        "aRMSE": rmse_value,
-                        "SAD": sad_value,
-                        "inpainting_residual": inpainting_residual,
-                    }
-                )
+                if runner_on:
+                    runner.log(
+                        {
+                            "loss": loss_value,
+                            "residual": residual_value,
+                            "normed_residual": curr_residual_normed,
+                            "entropy": entropy_value,
+                            "aRMSE": rmse_value,
+                            "SAD": sad_value,
+                            "inpainting_residual": inpainting_residual,
+                            "sparsity": sparsity,
+                        }
+                    )
 
             if None in timesteps:
                 results["inpainting"] = {
@@ -837,6 +865,10 @@ class DSEDA:
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
         return msg
+
+    @staticmethod
+    def compute_sparsity(A, tol=0.01):
+        return (A <= tol).sum() / A.numel()
 
 
 def check_f():
@@ -901,7 +933,7 @@ def inpainting(Y, B, mask=None):
     # Hardcode mask first
     L, N = Y.shape
     Z = Y @ B
-    p = 0.5
+    p = 0.97
     np.random.seed(42)
     mask = np.random.binomial(1, p, L)
 

@@ -4,6 +4,7 @@ SNR: Null
 runs: 1
 display: False
 torch: False
+wandb: False
 
 defaults:
   - dataset : SDC

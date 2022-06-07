@@ -70,3 +70,30 @@ class PixelwiseL1Norm(PixelwiseNorm):
 class PixelwiseL2Norm(PixelwiseNorm):
     def __init__(self):
         super().__init__(order=2)
+
+
+class PixelwiseNormCutoff(BaseNormalizer):
+    def __init__(self, order, **kwargs):
+        super().__init__(**kwargs)
+        self.order = order
+
+    def transform(self, Y):
+        assert len(Y.shape) == 2
+        num = Y
+        norm = LA.norm(Y, axis=0, ord=self.order, keepdims=True)
+        cutoff = 0.25 * norm.mean()
+        logger.info(f"Cutoff => {cutoff}")
+        denom = np.maximum(norm, cutoff)
+        res = (num / denom).astype(self.dtype)
+        # return res / res.max()
+        return res
+
+
+class PixelwiseL1NormCutoff(PixelwiseNormCutoff):
+    def __init__(self):
+        super().__init__(order=1)
+
+
+class PixelwiseL2NormCutoff(PixelwiseNormCutoff):
+    def __init__(self):
+        super().__init__(order=2)
