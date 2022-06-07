@@ -38,4 +38,8 @@ $ python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
 
 ## Getting started
 
-To be done.
+Command to start training the model on the `Urban4` dataset with `centering`:
+
+```
+$ python main.py dataset=Urban4 mode=multistop model=DSEDA stdout=DEBUG model.epsilon=0.001 torch=True model.T=10 model.Ainit=Bt normalizer=PixelwiseL2Norm model.centering=True
+```
