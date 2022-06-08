@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 import wandb
 from hsi_unmixing.models.metrics import SADDegrees, aRMSE
+from sklearn.cluster import KMeans
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -695,8 +696,10 @@ class DSEDA:
             fact = 1 / (1 - self.epsilon * self.etaA)
             return F.softmax(fact * torch.log(a) + b, dim=0)
 
-        def computeLA(A, B):
-            YB = Y @ B
+        def computeLA(a, b, mY):
+            # breakpoint()
+            # YB = (Y + mY) @ b
+            YB = Y @ b
             S = torch.linalg.svdvals(YB)
             return S[0] * S[0]
 
@@ -723,71 +726,77 @@ class DSEDA:
 
             meanY = Y.mean(1, keepdims=True) if self.centering else 0
 
-            breakpoint()
+            # breakpoint()
             Y -= meanY
 
-            _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
-            Vhp = Vh[:p]
-            S_inv = torch.linalg.inv(torch.diag(S[:p]))
-            B0 = Vhp.t() @ S_inv
-            if self.Binit == "soft":
-                B = F.softmax(B0, dim=0)
-            elif self.Binit == "proj":
-                # L1 projection
-                B = torch.abs(B0) / torch.sum(
-                    torch.abs(B0),
-                    dim=0,
-                    keepdims=True,
-                )
-            else:
-                raise NotImplementedError
+            B, A = kmeans_init(Y, p)
 
-            # A init
-            if self.Ainit == "soft":
-                A = torch.randn((p, N))
-                A = F.softmax(-grad_A(A, B), dim=0)
-            elif self.Ainit == "DS":
-                # Decomp Simplex
-                Yf = np.asfortranarray(Y.numpy(), dtype=np.float64)
-                Ef = np.asfortranarray((Y @ B).numpy(), dtype=np.float64)
+            # _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
+            # Vhp = Vh[:p]
+            # S_inv = torch.linalg.inv(torch.diag(S[:p]))
+            # B0 = Vhp.t() @ S_inv
+            # if self.Binit == "soft":
+            #     B = F.softmax(B0, dim=0)
+            # elif self.Binit == "proj":
+            #     # L1 projection
+            #     B = torch.abs(B0) / torch.sum(
+            #         torch.abs(B0),
+            #         dim=0,
+            #         keepdims=True,
+            #     )
+            # elif self.Binit == "rand":
+            #     B = F.softmax(torch.randn((N, p)), dim=0)
+            # else:
+            #     raise NotImplementedError
 
-                W = spams.decompSimplex(
-                    Yf,
-                    Ef,
-                    computeXtX=True,
-                    numThreads=-1,
-                )
-                A = torch.Tensor(sp.csr_matrix.toarray(W))
-            elif self.Ainit == "deterministic":
-                A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
-            elif self.Ainit == "Bt":
-                A = F.softmax(B.t(), dim=0)
-            else:
-                raise NotImplementedError
+            # # A init
+            # if self.Ainit == "soft":
+            #     A = torch.randn((p, N))
+            # B = F.softmax(B, dim=0)
+            # A = F.softmax(-grad_A(A, B), dim=0)
+            # elif self.Ainit == "DS":
+            #     # Decomp Simplex
+            #     Yf = np.asfortranarray(Y.numpy(), dtype=np.float64)
+            #     Ef = np.asfortranarray((Y @ B).numpy(), dtype=np.float64)
+
+            #     W = spams.decompSimplex(
+            #         Yf,
+            #         Ef,
+            #         computeXtX=True,
+            #         numThreads=-1,
+            #     )
+            #     A = torch.Tensor(sp.csr_matrix.toarray(W))
+            # elif self.Ainit == "deterministic":
+            #     A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
+            # elif self.Ainit == "Bt":
+            #     A = F.softmax(B.t(), dim=0)
+            # else:
+            #     raise NotImplementedError
 
             # Device loading
             Y = Y.to(self.device)
+            meanY = meanY.to(self.device) if self.centering else 0
 
             # meanY = 0
             A = A.to(self.device)
             B = B.to(self.device)
             best_res_c = np.inf
 
-            self.etaA = 1.0 / computeLA(A, B)
-            breakpoint()
+            self.etaA = 1.0 / computeLA(A, B, meanY)
             # self.etaA = 1.0
             # self.etaA = 0.5
             # self.etaA = 0.1
             # self.etaA = 0.27
             print(f"eta A value: {self.etaA}")
+            # breakpoint()
 
             # Main loop
             for ii in range(self.T):
                 for kk in range(self.Ka):
                     A = update(A, -self.etaA * grad_A(A, B))
-                    # if kk % self.log_every_n_steps == 0:
-                    #     loss_value = round(loss(A, B).item(), 2)
-                    #     logger.debug(f"Loss: {loss_value} [{ii}|A:{kk+1}]")
+                # if kk % self.log_every_n_steps == 0:
+                #     loss_value = round(loss(A, B).item(), 2)
+                #     logger.debug(f"Loss: {loss_value} [{ii}|A:{kk+1}]")
 
                 for kk in range(self.Kb):
                     B = update_spamsB(A, B)
@@ -869,6 +878,25 @@ class DSEDA:
     @staticmethod
     def compute_sparsity(A, tol=0.01):
         return (A <= tol).sum() / A.numel()
+
+
+def kmeans_init(Y, p):
+    X = Y.numpy().T
+
+    N, L = X.shape
+
+    kmeans = KMeans(n_clusters=p, n_init=1)
+    labels = kmeans.fit_predict(X)
+    A = np.zeros((p, N))
+    # Cluster assignment
+    for ii, label in enumerate(labels):
+        A[label, ii] = 1.0
+    B = A.T
+    # Normalize B
+    B /= B.sum(0, keepdims=True)
+    A = torch.Tensor(A)
+    B = torch.Tensor(B)
+    return B, A
 
 
 def check_f():
