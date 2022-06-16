@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import wandb
 from hsi_unmixing.models.metrics import SADDegrees, aRMSE
 from sklearn.cluster import KMeans
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -644,7 +645,8 @@ class DSEDA:
         aligner=None,
         tol=1e-40,
         timesteps=[20, 50, None],
-        runner_on=True,
+        runner_on=False,
+        mode="blind",
         **kwargs,
     ):
 
@@ -692,14 +694,14 @@ class DSEDA:
         def grad_B(a, b):
             return -Y.t() @ ((Y - Y @ b @ a) @ a.t())
 
-        def update(a, b):
-            fact = 1 / (1 - self.epsilon * self.etaA)
+        def update(a, b, epsilon):
+            fact = 1 / (1 - epsilon * self.etaA)
             return F.softmax(fact * torch.log(a) + b, dim=0)
 
         def computeLA(a, b, mY):
             # breakpoint()
-            # YB = (Y + mY) @ b
-            YB = Y @ b
+            YB = (Y + mY) @ b
+            # YB = Y @ b
             S = torch.linalg.svdvals(YB)
             return S[0] * S[0]
 
@@ -731,47 +733,61 @@ class DSEDA:
 
             B, A = kmeans_init(Y, p)
 
-            # _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
-            # Vhp = Vh[:p]
-            # S_inv = torch.linalg.inv(torch.diag(S[:p]))
-            # B0 = Vhp.t() @ S_inv
-            # if self.Binit == "soft":
-            #     B = F.softmax(B0, dim=0)
-            # elif self.Binit == "proj":
-            #     # L1 projection
-            #     B = torch.abs(B0) / torch.sum(
-            #         torch.abs(B0),
-            #         dim=0,
-            #         keepdims=True,
-            #     )
-            # elif self.Binit == "rand":
-            #     B = F.softmax(torch.randn((N, p)), dim=0)
-            # else:
-            #     raise NotImplementedError
+            # A = A + 0.01
+            # A /= A.sum(0, keepdims=True)
+            # B = B + 0.01 * B.max()
+            # B /= B.sum(0, keepdims=True)
+            _, S, Vh = torch.linalg.svd(Y, full_matrices=False)
+            Vhp = Vh[:p]
+            S_inv = torch.linalg.inv(torch.diag(S[:p]))
+            B0 = Vhp.t() @ S_inv
+            if self.Binit == "soft":
+                B = F.softmax(B0, dim=0)
+            elif self.Binit == "proj":
+                # L1 projection
+                B = torch.abs(B0) / torch.sum(
+                    torch.abs(B0),
+                    dim=0,
+                    keepdims=True,
+                )
+            elif self.Binit == "rand":
+                B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
+                # B = F.softmax(torch.rand((N, p)), dim=0)
+            elif self.Binit == "uniform":
+                B = F.softmax(
+                    (1 / N) * torch.ones_like(B) + 0.001 * torch.rand_like(B), dim=0
+                )
+            elif self.Binit == "kmeans":
+                pass
+            else:
+                raise NotImplementedError
 
-            # # A init
-            # if self.Ainit == "soft":
-            #     A = torch.randn((p, N))
-            # B = F.softmax(B, dim=0)
-            # A = F.softmax(-grad_A(A, B), dim=0)
-            # elif self.Ainit == "DS":
-            #     # Decomp Simplex
-            #     Yf = np.asfortranarray(Y.numpy(), dtype=np.float64)
-            #     Ef = np.asfortranarray((Y @ B).numpy(), dtype=np.float64)
+            # A init
+            if self.Ainit == "soft":
+                # A = torch.randn((p, N))
+                A = F.softmax(-grad_A(A, B), dim=0)
+            elif self.Ainit == "DS":
+                # Decomp Simplex
+                Yf = np.asfortranarray(Y.numpy(), dtype=np.float64)
+                Ef = np.asfortranarray((Y @ B).numpy(), dtype=np.float64)
 
-            #     W = spams.decompSimplex(
-            #         Yf,
-            #         Ef,
-            #         computeXtX=True,
-            #         numThreads=-1,
-            #     )
-            #     A = torch.Tensor(sp.csr_matrix.toarray(W))
-            # elif self.Ainit == "deterministic":
-            #     A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
-            # elif self.Ainit == "Bt":
-            #     A = F.softmax(B.t(), dim=0)
-            # else:
-            #     raise NotImplementedError
+                W = spams.decompSimplex(
+                    Yf,
+                    Ef,
+                    computeXtX=True,
+                    numThreads=-1,
+                )
+                A = torch.Tensor(sp.csr_matrix.toarray(W))
+            elif self.Ainit == "deterministic":
+                A = F.softmax(B.t() @ Y.t() @ Y, dim=0)
+            elif self.Ainit == "Bt":
+                A = F.softmax(B.t(), dim=0)
+            elif self.Ainit == "uniform":
+                A = (1 / p) * torch.ones_like(A)
+            elif self.Ainit == "kmeans":
+                pass
+            else:
+                raise NotImplementedError
 
             # Device loading
             Y = Y.to(self.device)
@@ -783,23 +799,29 @@ class DSEDA:
             best_res_c = np.inf
 
             self.etaA = 1.0 / computeLA(A, B, meanY)
+            # self.etaB = self.etaA * p / N
+            # self.etaB = B.max()
+            self.etaB = self.etaA * ((p / N) ** 0.5)
             # self.etaA = 1.0
             # self.etaA = 0.5
             # self.etaA = 0.1
             # self.etaA = 0.27
             print(f"eta A value: {self.etaA}")
+            print(f"eta B value: {self.etaB}")
             # breakpoint()
 
             # Main loop
-            for ii in range(self.T):
+            for ii in tqdm(range(self.T)):
                 for kk in range(self.Ka):
-                    A = update(A, -self.etaA * grad_A(A, B))
+                    A = update(A, -self.etaA * grad_A(A, B), self.epsilon)
                 # if kk % self.log_every_n_steps == 0:
                 #     loss_value = round(loss(A, B).item(), 2)
                 #     logger.debug(f"Loss: {loss_value} [{ii}|A:{kk+1}]")
+                # print(A[0])
 
                 for kk in range(self.Kb):
-                    B = update_spamsB(A, B)
+                    # B = update_spamsB(A, B)
+                    B = update(B, -self.etaB * grad_B(A, B), 0.0)
                     # if kk % self.log_every_n_steps == 0:
                     # loss_value = round(loss(A, B).item(), 2)
                     # logger.debug(f"Loss: {loss_value} [{ii}|B:{kk+1}]")
@@ -810,19 +832,19 @@ class DSEDA:
                         "A": A.cpu().numpy(),
                     }
 
-                # if ii % 10 == 9:
-                res_c = inpainting(
-                    Y.cpu().numpy(),
-                    B.cpu().numpy(),
-                )
+                # # if ii % 10 == 9:
+                # res_c = inpainting(
+                #     Y.cpu().numpy(),
+                #     B.cpu().numpy(),
+                # )
 
-                if res_c < best_res_c:
-                    best_res_c = res_c
+                # if res_c < best_res_c:
+                #     best_res_c = res_c
 
-                    self.Y = (Y @ B @ A).cpu().numpy()
-                    self.E = (Y @ B).cpu().numpy()
-                    self.A = A.cpu().numpy()
-                    self.Xmap = B.t().cpu().numpy()
+                #     self.Y = (Y @ B @ A).cpu().numpy()
+                #     self.E = ((Y + meanY) @ B).cpu().numpy()
+                #     self.A = A.cpu().numpy()
+                #     self.Xmap = B.t().cpu().numpy()
 
                 loss_value = round(loss(A, B).item(), 2)
                 curr_residual = residual(A, B).item()
@@ -830,13 +852,15 @@ class DSEDA:
                 curr_residual_normed = 2 * curr_residual / (Y ** 2).sum()
                 residual_normed_value = round(curr_residual_normed.item(), 2)
                 entropy_value = round(entropy(A).item(), 2)
-                inpainting_residual = round(res_c, 2)
+                # inpainting_residual = round(res_c, 2)
                 sparsity = round(self.compute_sparsity(A).item(), 2)
 
                 E0 = ((Y + meanY) @ B).cpu().numpy()
-                E1 = aligner.fit_transform(E0)
+                # E1 = aligner.fit_transform(E0)
                 A0 = A.cpu().numpy()
-                A1 = aligner.transform_abundances(A0)
+                # A1 = aligner.transform_abundances(A0)
+                A1 = aligner.fit_transform(A0)
+                E1 = aligner.transform_endmembers(E0)
                 sad_value = round(sad(E1, E_gt), 2)
                 rmse_value = round(rmse(A1, A_gt), 2)
 
@@ -849,27 +873,30 @@ class DSEDA:
                             "entropy": entropy_value,
                             "aRMSE": rmse_value,
                             "SAD": sad_value,
-                            "inpainting_residual": inpainting_residual,
+                            # "inpainting_residual": inpainting_residual,
                             "sparsity": sparsity,
                         }
                     )
 
-            if None in timesteps:
-                results["inpainting"] = {
-                    "E": self.E,
-                    "A": self.A,
-                }
+            # if None in timesteps:
+            #     results["inpainting"] = {
+            #         "E": self.E,
+            #         "A": self.A,
+            #     }
 
         exc_time = round(time.time() - tic, 2)
         logger.info(f"{self} took {exc_time} seconds")
 
-        # self.Y = (Y @ B @ A).cpu().numpy()
-        # self.E = (Y @ B).cpu().numpy()
-        # self.A = A.cpu().numpy()
-        # self.Xmap = B.t().cpu().numpy()
+        self.Y = ((Y + meanY) @ B @ A).cpu().numpy()
+        self.E = ((Y + meanY) @ B).cpu().numpy()
+        self.A = A.cpu().numpy()
+        self.Xmap = B.t().cpu().numpy()
 
         # return self.E, self.A
-        return results
+        if mode == "multistop":
+            return results
+        elif mode == "blind":
+            return self.E, self.A
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
@@ -880,22 +907,144 @@ class DSEDA:
         return (A <= tol).sum() / A.numel()
 
 
+class EDAv1:
+    def __init__(
+        self,
+        T=100,
+        Ka=100,
+        Kb=100,
+        epsilon=1e-3,
+    ):
+        self.T = T
+        self.Ka = Ka
+        self.Kb = Kb
+        self.epsilon = epsilon
+
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    def solve(
+        self,
+        Y,
+        p,
+        hsi,
+        runs,
+        tol=1e-40,
+        **kwargs,
+    ):
+        best_E = None
+        best_A = None
+        min_max_corrcoef = 10.0
+
+        L, N = Y.shape
+
+        def residual(a, b):
+            return 0.5 * ((Y - (Y @ b) @ a) ** 2).sum()
+
+        def entropy(x):
+            ret = torch.where(
+                x > tol,
+                -(x * (torch.log(x))).to(torch.float64),
+                0.0,
+            ).sum()
+            return ret
+
+        def loss(a, b):
+            return residual(a, b) + self.epsilon * entropy(a)
+
+        def grad_A(a, b):
+            YB = Y @ b
+            ret = -YB.t() @ (Y - YB @ a)
+            return ret
+
+        def grad_B(a, b):
+            return -Y.t() @ ((Y - Y @ b @ a) @ a.t())
+
+        def update(a, b, epsilon):
+            fact = 1 / (1 - epsilon * self.etaA)
+            return F.softmax(fact * torch.log(a) + b, dim=0)
+
+        def computeLA(a, b):
+            YB = Y @ b
+            S = torch.linalg.svdvals(YB)
+            return S[0] * S[0]
+
+        max_correl = lambda e: np.max(np.corrcoef(e.T) - np.eye(p))
+
+        tic = time.time()
+
+        for run in tqdm(range(runs)):
+            torch.manual_seed(run)
+
+            with torch.no_grad():
+
+                B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
+                A = (1 / p) * torch.ones((p, N))
+
+                Y = Y.to(self.device)
+                A = A.to(self.device)
+                B = B.to(self.device)
+
+                for ii in range(self.T):
+                    if ii % self.T == 0:
+                        # if ii % 10 == 0:
+                        self.etaA = 1.0 / computeLA(A, B)
+                        # self.etaB = self.etaA * ((p / N) ** 0.5)
+                        self.etaB = self.etaA * (p / N)
+                    for kk in range(self.Ka):
+                        A = update(A, -self.etaA * grad_A(A, B), self.epsilon)
+
+                    for kk in range(self.Kb):
+                        B = update(B, -self.etaB * grad_B(A, B), 0.0)
+
+                E = (Y @ B).cpu().numpy()
+                A = A.cpu().numpy()
+                non_diagonal_max_corrcoef = max_correl(E)
+                if non_diagonal_max_corrcoef < min_max_corrcoef:
+                    min_max_corrcoef = non_diagonal_max_corrcoef
+                    best_E = E
+                    best_A = A
+                    self.Xmap = B.t().cpu().numpy()
+
+        toc = time.time()
+        elapsed_time = round(toc - tic, 2)
+        logger.info(f"{self} took {elapsed_time}s")
+
+        return best_E, best_A
+
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}"
+        return msg
+
+
 def kmeans_init(Y, p):
     X = Y.numpy().T
 
     N, L = X.shape
 
+    # kmeans = KMeans(n_clusters=p, n_init=10)
     kmeans = KMeans(n_clusters=p, n_init=1)
     labels = kmeans.fit_predict(X)
+    centroids = kmeans.cluster_centers_
+    logger.info(np.unique(labels, return_counts=True))
     A = np.zeros((p, N))
+    dists = np.zeros((N, p))
     # Cluster assignment
     for ii, label in enumerate(labels):
         A[label, ii] = 1.0
-    B = A.T
+    for jj in range(N):
+        dists[jj] = np.sum((X[jj] - centroids) ** 2, axis=1)
+    # breakpoint()
+    B = np.copy(A.T)
+    # Weighted by distance to centroids
+    B = 1 / dists
+    # B = dists
     # Normalize B
-    B /= B.sum(0, keepdims=True)
+    # B /= B.sum(0, keepdims=True)
+    assert np.allclose(A.sum(0), np.ones(N))
+    # assert np.allclose(B.sum(0), np.ones(p))
     A = torch.Tensor(A)
     B = torch.Tensor(B)
+    B = F.softmax(B, dim=0)
     return B, A
 
 

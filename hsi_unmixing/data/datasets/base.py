@@ -149,13 +149,15 @@ class HSI:
         xlabel = "# Bands"
         if E0 is None:
             E = np.copy(self.scaledE)
-            title += " GT Endmembers"
+            title += " GT Endmembers\n"
             linestyle = "-"
         else:
             assert self.E.shape == E0.shape
             E = np.copy(E0)
-            title += " Estimated Endmembers"
+            title += " Estimated Endmembers\n"
             linestyle = "--"
+        max_correl = np.max(np.corrcoef(E.T) - np.eye(self.p))
+        title += f"MaxCorrCoef => {round(max_correl, 2)}"
         # if normalize:
         #     title += " ($l_\infty$-normalized)"
         #     ylabel += " Normalized"

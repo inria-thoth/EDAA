@@ -214,31 +214,96 @@ class MunkresAligner(BaseAligner):
         self.P = P
 
 
+class BaseAbundancesAligner:
+    def __init__(self, hsi, criterion):
+        self.Aref = hsi.A
+        self.criterion = criterion
+        self.P = None
+        self.dists = None
+
+    def fit(self, A):
+        raise NotImplementedError
+
+    def transform(self, A):
+        assert self.P is not None, "Must be fitted first"
+        assert A.shape[0] == self.P.shape[0]
+        assert A.shape[0] == self.P.shape[1]
+
+        return self.P @ A
+
+    def transform_endmembers(self, E):
+        assert self.P is not None, "Must be fitted first"
+        assert E.shape[1] == self.P.shape[0]
+        assert E.shape[1] == self.P.shape[1]
+
+        return E @ self.P.T
+
+    def fit_transform(self, A):
+
+        self.fit(A)
+        res = self.transform(A)
+        return res
+
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}_crit{self.criterion}"
+        return msg
+
+
+class MunkresAbundancesAligner(BaseAbundancesAligner):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def fit(self, A):
+
+        # breakpoint()
+        # Computing distance matrix
+        self.dists = self.criterion(A.T, self.Aref.T)
+
+        # Initialization
+        p = A.shape[0]
+        P = np.zeros((p, p))
+
+        m = Munkres()
+        indices = m.compute(self.dists)
+        for row, col in indices:
+            P[row, col] = 1.0
+
+        self.P = P.T
+
+
 if __name__ == "__main__":
 
     from hsi_unmixing.data.datasets.base import HSI
     from hsi_unmixing.models.metrics import MeanAbsoluteError as MAE
+    from hsi_unmixing.models.metrics import MeanSquareError as MSE
 
-    hsi = HSI("Samson.mat", figs_dir=None)
-    Eref = hsi.E
-    L, p = Eref.shape
+    # hsi = HSI("Samson.mat", figs_dir=None)
+    hsi = HSI("WDC.mat")
+    # Eref = hsi.E
+    # L, p = Eref.shape
+    Aref = hsi.A
+    p, N = Aref.shape
 
     generator = np.random.RandomState(seed=0)
     Q = generator.permutation(np.eye(p))
-    E = Eref @ Q + 0.001 * generator.randn(L, p)
+    # E = Eref @ Q + 0.001 * generator.randn(L, p)
+    A = Q @ Aref + 0.001 * generator.randn(p, N)
 
     # metric = "MeanAbsoluteError"
 
-    criterion = MAE()
+    criterion = MSE()
 
-    for cls in [
-        NoneAligner,
-        GreedyAligner,
-        # HungarianAlgorithmAligner,
-    ]:
-
+    # for cls in [
+    #     NoneAligner,
+    #     GreedyAligner,
+    #     # HungarianAlgorithmAligner,
+    # ]:
+    for cls in [MunkresAbundancesAligner]:
         aligner = cls(hsi=hsi, criterion=criterion)
-        Ehat = aligner.fit_transform(E)
+        Ahat = aligner.fit_transform(A)
+
+        # aligner = cls(hsi=hsi, criterion=criterion)
+        # Ehat = aligner.fit_transform(E)
 
         print(f"{aligner}")
         print("-" * 15)

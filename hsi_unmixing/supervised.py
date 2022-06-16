@@ -41,19 +41,26 @@ def main(cfg):
             hsi=hsi,
             criterion=criterion,
         )
-        E1 = aligner.fit_transform(E0)
+        # E1 = aligner.fit_transform(E0)
 
         Y, _, _ = hsi(asTensor=cfg.torch)
 
         if cfg.torch:
-            E1 = torch.Tensor(E1)
+            # E1 = torch.Tensor(E1)
+            E0 = torch.Tensor(E0)
 
-        A0 = model.solve(Y, E1)
+        # A0 = model.solve(Y, E1)
+        A0 = model.solve(Y, E0)
+
+        A1 = aligner.fit_transform(A0)
+        E1 = aligner.transform_endmembers(E0)
 
         if cfg.torch:
-            A0 = A0.detach().numpy()
+            # A0 = A0.detach().numpy()
+            A1 = A1.detach().numpy()
 
-        RMSE.add_run(run, hsi.A, A0, hsi.labels)
+        # RMSE.add_run(run, hsi.A, A0, hsi.labels)
+        RMSE.add_run(run, hsi.A, A1, hsi.labels)
         SAD.add_run(run, hsi.E, E1, hsi.labels)
 
         hsi.plot_endmembers(
@@ -62,7 +69,8 @@ def main(cfg):
             run=run,
         )
         hsi.plot_abundances(
-            A0=A0,
+            # A0=A0,
+            A0=A1,
             display=cfg.display,
             run=run,
         )

@@ -3,9 +3,10 @@ import os
 
 import scipy.io as sio
 from hsi_unmixing.data.datasets.base import HSI
-from hsi_unmixing.models.aligners import MunkresAligner
-from hsi_unmixing.models.metrics import (MeanAbsoluteError, RMSEAggregator,
-                                         SADAggregator)
+from hsi_unmixing.models.aligners import (MunkresAbundancesAligner,
+                                          MunkresAligner)
+from hsi_unmixing.models.metrics import (MeanAbsoluteError, MeanSquareError,
+                                         RMSEAggregator, SADAggregator)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -18,6 +19,8 @@ def main(dataset):
     dir_path = f"/home/azouaoui/github/hu_autoencoders/Results/CNNAEU/{dataset}"
     for run, path in enumerate(os.listdir(dir_path)):
         full_path = os.path.join(dir_path, path)
+        if ".mat" not in full_path:
+            continue
         logger.debug(f"{full_path} to be opened...")
         data = sio.loadmat(full_path)
         E = data["M"]
@@ -30,7 +33,11 @@ def main(dataset):
         A = A.reshape(p, h * w)
 
         # Get HSI
-        hsi = HSI(f"{dataset}.mat")
+        # hsi = HSI(f"{dataset}.mat")
+        # hsi = HSI("Urban4.mat")
+        # hsi = HSI("Samson.mat")
+        # hsi = HSI("TinyAPEX.mat")
+        hsi = HSI("WDC.mat")
 
         # Aligner
         criterion = MeanAbsoluteError()
@@ -39,6 +46,12 @@ def main(dataset):
         # Align data
         E1 = aligner.fit_transform(E)
         A1 = aligner.transform_abundances(A)
+
+        # criterion = MeanSquareError()
+        # aligner = MunkresAbundancesAligner(hsi=hsi, criterion=criterion)
+
+        # A1 = aligner.fit_transform(A)
+        # E1 = aligner.transform_endmembers(E)
 
         # Add run
         RMSE.add_run(run, hsi.A, A1, hsi.labels)
@@ -52,4 +65,8 @@ def main(dataset):
 
 
 if __name__ == "__main__":
-    main("Samson")
+    # main("TinyAPEX")
+    main("WDC")
+    # main("Urban")
+    # main("JasperRidge")
+    # main("Samson")

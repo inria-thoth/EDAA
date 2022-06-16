@@ -43,11 +43,14 @@ def main(cfg):
         hsi=hsi,
         # H=hsi.H,
         # W=hsi.W,
-        seed=0,
+        seed=cfg.seed,
         aligner=aligner,
         # timesteps=[10, 20, 30, 40],
-        timesteps=[10, 20, 30],
+        # timesteps=[10, 20, 30],
+        timesteps=[10, 50, 100],
+        # timesteps=[5, 10],
         runner_on=cfg.wandb,
+        mode="multistop",
     )
 
     for key, stop in results.items():
@@ -63,8 +66,10 @@ def main(cfg):
         sparsity_printable = round(sparsity, 2)
         logger.info(f"{key} => {sparsity_printable} (sparsity)")
 
-        E1 = aligner.fit_transform(E0)
-        A1 = aligner.transform_abundances(A0)
+        # E1 = aligner.fit_transform(E0)
+        # A1 = aligner.transform_abundances(A0)
+        A1 = aligner.fit_transform(A0)
+        E1 = aligner.transform_endmembers(E0)
 
         RMSE.add_run(0, hsi.A, A1, hsi.labels)
         SAD.add_run(0, hsi.E, E1, hsi.labels)

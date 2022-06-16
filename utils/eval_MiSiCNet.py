@@ -3,8 +3,8 @@ import os
 
 import scipy.io as sio
 from hsi_unmixing.data.datasets.base import HSI
-from hsi_unmixing.models.aligners import MunkresAligner
-from hsi_unmixing.models.metrics import (MeanAbsoluteError, RMSEAggregator,
+from hsi_unmixing.models.aligners import MunkresAbundancesAligner
+from hsi_unmixing.models.metrics import (MeanSquareError, RMSEAggregator,
                                          SADAggregator)
 
 logger = logging.getLogger(__name__)
@@ -53,17 +53,25 @@ def main(dataset):
 
     # Get HSI
     # hsi = HSI("TinyAPEX.mat")
-    # hsi = HSI("WDC.mat")
+    hsi = HSI("WDC.mat")
     # hsi = HSI("Urban4.mat")
-    hsi = HSI("SamsonFixed.mat")
+    # hsi = HSI("SamsonFixed.mat")
+    # hsi = HSI("Samson.mat")
+    # hsi = HSI("JasperRidge.mat")
 
-    # Aligner
-    criterion = MeanAbsoluteError()
-    aligner = MunkresAligner(hsi=hsi, criterion=criterion)
+    # # Aligner
+    # criterion = MeanAbsoluteError()
+    # aligner = MunkresAligner(hsi=hsi, criterion=criterion)
+
+    # # Align data
+    # E1 = aligner.fit_transform(E)
+    # A1 = aligner.transform_abundances(A)
+    criterion = MeanSquareError()
+    aligner = MunkresAbundancesAligner(hsi=hsi, criterion=criterion)
 
     # Align data
-    E1 = aligner.fit_transform(E)
-    A1 = aligner.transform_abundances(A)
+    A1 = aligner.fit_transform(A)
+    E1 = aligner.transform_endmembers(E)
 
     # Add run
     RMSE.add_run(0, hsi.A, A1, hsi.labels)
@@ -78,6 +86,7 @@ def main(dataset):
 
 if __name__ == "__main__":
     # main("Apex")
-    # main("WDC")
+    main("WDC")
     # main("Urban4")
-    main("Samson")
+    # main("SamsonOld")
+    # main("JasperRidge")

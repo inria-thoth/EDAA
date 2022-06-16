@@ -55,14 +55,18 @@ def main(cfg):
             W=hsi.W,
             seed=run,
             aligner=aligner,
+            mode="blind",
+            runs=cfg.nruns,
         )
 
         sparsity = (A0 <= 0.01).sum() / A0.size
         sparsity_printable = round(sparsity, 2)
         logger.info(f"Sparsity => {sparsity_printable}")
 
-        E1 = aligner.fit_transform(E0)
-        A1 = aligner.transform_abundances(A0)
+        # E1 = aligner.fit_transform(E0)
+        # A1 = aligner.transform_abundances(A0)
+        A1 = aligner.fit_transform(A0)
+        E1 = aligner.transform_endmembers(E0)
 
         RMSE.add_run(run, hsi.A, A1, hsi.labels)
         SAD.add_run(run, hsi.E, E1, hsi.labels)
@@ -85,7 +89,8 @@ def main(cfg):
         )
 
         if hasattr(model, "Xmap"):
-            X1 = aligner.transform_abundances(model.Xmap)
+            # X1 = aligner.transform_abundances(model.Xmap)
+            X1 = aligner.transform(model.Xmap)
             hsi.plot_contributions(
                 X0=X1,
                 method=model,

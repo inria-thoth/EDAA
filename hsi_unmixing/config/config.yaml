@@ -2,6 +2,7 @@ mode: "supervised"
 seed: 0
 SNR: Null
 runs: 1
+nruns: 10
 display: False
 torch: False
 wandb: False
@@ -11,16 +12,16 @@ defaults:
   - normalizer: PixelwiseL2Norm
   - setter: DS
   - initializer: VCA
-  - model: DS
-  - aligner: munkres
+  - model: EDAv1
+  - aligner: munkresA
   - noise: AWGN
-  - criterion: MAE
+  - criterion: MSE
   - cluster: OAR
   - launcher: default
   - _self_
 
 
-stdout: INFO
+stdout: DEBUG
 
 hydra:
   run:
