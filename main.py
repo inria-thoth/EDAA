@@ -36,6 +36,8 @@ def main(cfg: DictConfig) -> None:
         from hsi_unmixing.supervised import main as _main
     elif mode == "multistop":
         from hsi_unmixing.multistop import main as _main
+    elif mode == "clustering":
+        from hsi_unmixing.clustering import main as _main
     else:
         raise ValueError(f"Mode {mode} is invalid")
 

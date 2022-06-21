@@ -7,6 +7,7 @@ import spams
 import torch
 import torch.nn.functional as F
 import wandb
+from hsi_unmixing.models.initializers import VCA
 from hsi_unmixing.models.metrics import SADDegrees, aRMSE
 from sklearn.cluster import KMeans
 from tqdm import tqdm
@@ -921,6 +922,7 @@ class EDAv1:
         self.epsilon = epsilon
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.endmembers = []
 
     def solve(
         self,
@@ -934,6 +936,8 @@ class EDAv1:
         best_E = None
         best_A = None
         min_max_corrcoef = 10.0
+        max_det = 0.0
+        min_SSD = 1e10
 
         L, N = Y.shape
 
@@ -968,7 +972,16 @@ class EDAv1:
             S = torch.linalg.svdvals(YB)
             return S[0] * S[0]
 
+        def SSD(e):
+            ret = 0
+            for ll in range(L):
+                ret += (
+                    e[ll][None, :] @ (p * np.eye(p) - np.ones((p, p))) @ e[ll][:, None]
+                )
+            return np.asscalar(ret)
+
         max_correl = lambda e: np.max(np.corrcoef(e.T) - np.eye(p))
+        det = lambda e: np.abs(np.linalg.det(e.T @ e))
 
         tic = time.time()
 
@@ -978,6 +991,8 @@ class EDAv1:
             with torch.no_grad():
 
                 B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
+                # B = F.softmax(0.01 * torch.rand((N, p)), dim=0)
+                # B = VCA_init(hsi=hsi, seed=run)
                 A = (1 / p) * torch.ones((p, N))
 
                 Y = Y.to(self.device)
@@ -999,21 +1014,51 @@ class EDAv1:
                 E = (Y @ B).cpu().numpy()
                 A = A.cpu().numpy()
                 non_diagonal_max_corrcoef = max_correl(E)
+                curr_det = det(E)
+                ssd_value = SSD(E)
+                logger.info(f"Current det => {round(curr_det, 5)}")
+                logger.info(f"NDMCC => {round(non_diagonal_max_corrcoef, 3)}")
+                logger.info(f"SSD => {round(SSD(E), 3)}")
+                # if curr_det > max_det:
                 if non_diagonal_max_corrcoef < min_max_corrcoef:
+                    # if ssd_value < min_SSD:
                     min_max_corrcoef = non_diagonal_max_corrcoef
+                    # min_SSD = ssd_value
+                    logger.info("MIN!")
+                    # logger.info("MAX!")
+                    # max_det = curr_det
                     best_E = E
                     best_A = A
                     self.Xmap = B.t().cpu().numpy()
 
+                    self.endmembers.append(E)
+
         toc = time.time()
         elapsed_time = round(toc - tic, 2)
         logger.info(f"{self} took {elapsed_time}s")
+        logger.info(f"{len(self.endmembers)} bundles selected...")
 
         return best_E, best_A
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}"
         return msg
+
+
+def VCA_init(hsi, seed):
+    vca = VCA()
+    _ = vca.init_like(hsi, seed)
+    indices = vca.indices
+
+    N, p = hsi.N, hsi.p
+
+    B = np.zeros((N, p))
+    for pp, ii in enumerate(indices):
+        B[ii, pp] = 1.0
+
+    assert np.allclose(B.sum(0), np.ones(p))
+    B = torch.Tensor(B)
+    return B
 
 
 def kmeans_init(Y, p):
