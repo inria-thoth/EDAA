@@ -38,12 +38,17 @@ if __name__ == "__main__":
 
     # plt.use("TKAgg")
 
-    normalizer = PL2()
+    # normalizer = PL2()
     # normalizer = GMM()
-    # normalizer = BMM()
-    hsi4 = Urban4Dataset(normalizer=normalizer)
-    print(hsi4)
-    hsi4.plot_hsi()
+    normalizer = BMM()
+    hsi = Urban6Dataset(normalizer=normalizer)
+    print(hsi)
+    hsi.plot_hsi(
+        channels=[130, 70, 30],
+        sort_channels=False,
+        transpose=True,
+    )
+    # hsi.plot_endmembers()
     # hsi5 = Urban5Dataset(normalizer=normalizer)
     # print(hsi5)
     # hsi4.plot_endmembers(normalize=False)

@@ -38,6 +38,16 @@ if __name__ == "__main__":
     # from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
     # # from hsi_unmixing.data.normalizers import PixelwiseL1Norm as PL1
     # from hsi_unmixing.models.supervised import DecompSimplex as DS
+    from hsi_unmixing.data.normalizers import BandwiseMinMax as BMM
+    from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
+
+    normalizer = BMM()
+    # normalizer = PL2()
+
+    hsi = TinyAPEXDataset(normalizer=normalizer)
+    print(hsi)
+    hsi.plot_hsi(channels=[200, 100, 10], sort_channels=False)
+    # hsi.plot_endmembers()
 
     # setter = DS()
     # normalizer = GMM()
@@ -52,5 +62,5 @@ if __name__ == "__main__":
     # # hsi.plot_abundances(grid=(2, 3))
 
     # hsi.plot_abundances()
-    hsi = TinyAPEXDataset()
-    print(hsi)
+    # hsi = TinyAPEXDataset()
+    # print(hsi)

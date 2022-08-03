@@ -19,7 +19,7 @@ def main(dataset):
     RMSE = RMSEAggregator()
     SAD = SADAggregator()
 
-    dir_path = f"/home/azouaoui/github/hu_autoencoders/Results/CNNAEU/{dataset}"
+    dir_path = f"/home/azouaoui/github/hu_autoencoders/Results/Endnet/{dataset}"
     for run, path in enumerate(os.listdir(dir_path)):
         full_path = os.path.join(dir_path, path)
         if ".mat" not in full_path:
@@ -39,10 +39,10 @@ def main(dataset):
         # hsi = HSI(f"{dataset}.mat")
         # hsi = HSI("Urban4.mat")
         # hsi = HSI("Samson.mat", normalizer=PL2())
-        hsi = HSI("JasperRidge.mat", normalizer=PL2())
+        # hsi = HSI("JasperRidge.mat", normalizer=PL2())
         # hsi = HSI("Samson.mat", normalizer=RawInput())
         # hsi = HSI("Urban6.mat", normalizer=PL2())
-        # hsi = HSI("WDC.mat", normalizer=PL2())
+        hsi = HSI("WDC.mat", normalizer=PL2())
         # hsi = HSI("TinyAPEX.mat", normalizer=PL2())
         # hsi = HSI("TinyAPEX.mat", normalizer=RawInput())
         # hsi = HSI("WDC.mat", normalizer=RawInput())
@@ -78,9 +78,10 @@ def main(dataset):
 
 if __name__ == "__main__":
     # main("TinyAPEX")
-    # main("WDC")
+    main("WDC")
     # main("Urban")
     # main("U6")
     # main("Urban")
     # main("Samson")
-    main("JasperRidge")
+    # main("JasperRidge")
+    # main("Samson")

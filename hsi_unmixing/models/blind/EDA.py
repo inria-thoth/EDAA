@@ -931,6 +931,7 @@ class EDAv1:
         hsi,
         runs,
         tol=1e-40,
+        seed=0,
         **kwargs,
     ):
         best_E = None
@@ -943,6 +944,9 @@ class EDAv1:
 
         def residual(a, b):
             return 0.5 * ((Y - (Y @ b) @ a) ** 2).sum()
+
+        def residual_l1(a, b):
+            return (Y - (Y @ b) @ a).abs().sum()
 
         def entropy(x):
             ret = torch.where(
@@ -972,6 +976,23 @@ class EDAv1:
             S = torch.linalg.svdvals(YB)
             return S[0] * S[0]
 
+        def computeLB(a, b):
+            diagA = torch.diag_embed(torch.diag(a @ a.T))
+            # SA = torch.linalg.svdvals(diagA)[0]
+            SA = torch.max(diagA)
+            # SX = torch.linalg.svdvals(Y @ Y.T)[0]
+            # SB = SA * SX
+            SB = SA
+            # kron = torch.kron(torch.diag(a @ a.T), Y.T @ Y)
+            # SB = torch.linalg.svdvals(kron)[0]
+
+            # logger.debug(f"SA => {SA}")
+            # logger.debug(f"SX => {SX}")
+            logger.debug(f"SB => {SB}")
+
+            return SB
+            # return None
+
         def SSD(e):
             ret = 0
             for ll in range(L):
@@ -983,55 +1004,107 @@ class EDAv1:
         max_correl = lambda e: np.max(np.corrcoef(e.T) - np.eye(p))
         det = lambda e: np.abs(np.linalg.det(e.T @ e))
 
+        results = {}
+
         tic = time.time()
 
         for run in tqdm(range(runs)):
-            torch.manual_seed(run)
+            torch.manual_seed(run + seed)
+            generator = np.random.RandomState(run + seed)
 
             with torch.no_grad():
 
                 B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
+                # B = 0.1 * torch.rand((N, p))
+                # B = (1 / N) * torch.ones((N, p))
                 # B = F.softmax(0.01 * torch.rand((N, p)), dim=0)
-                # B = VCA_init(hsi=hsi, seed=run)
+                # B = VCA_init(hsi=hsi, seed=run + seed)
                 A = (1 / p) * torch.ones((p, N))
+                # A = F.softmax(0.1 * torch.rand((p, N)), dim=0)
 
                 Y = Y.to(self.device)
                 A = A.to(self.device)
                 B = B.to(self.device)
 
+                # Random Step size factor
+                # fact = 2 ** generator.randint(-8, 9)
+                # fact = 2 ** generator.randint(-4, 5)
+                fact = 1
+                factA = 2 ** generator.randint(-3, 4)
+                factB = 2 ** generator.randint(-3, 4)
+
                 for ii in range(self.T):
                     if ii % self.T == 0:
                         # if ii % 10 == 0:
-                        self.etaA = 1.0 / computeLA(A, B)
-                        # self.etaB = self.etaA * ((p / N) ** 0.5)
-                        self.etaB = self.etaA * (p / N)
+                        # self.etaA = 1.0 / computeLA(A, B)
+                        self.etaA = factA / computeLA(A, B)
+                        self.etaB = self.etaA * ((p / N) ** 0.5)
+                        # self.etaB = factB / computeLB(A, B)
+                        # self.etaB = self.etaA * (p / N)
+                        # logger.debug(f"etaA => {self.etaA}")
+                        # logger.debug(f"etaB => {self.etaB}")
                     for kk in range(self.Ka):
-                        A = update(A, -self.etaA * grad_A(A, B), self.epsilon)
+                        # A = update(A, -self.etaA * grad_A(A, B), self.epsilon)
+                        A = update(A, -self.etaA * grad_A(A, B), 0.0)
 
                     for kk in range(self.Kb):
                         B = update(B, -self.etaB * grad_B(A, B), 0.0)
 
+                fit_l1 = residual_l1(A, B).item()
                 E = (Y @ B).cpu().numpy()
                 A = A.cpu().numpy()
-                non_diagonal_max_corrcoef = max_correl(E)
-                curr_det = det(E)
-                ssd_value = SSD(E)
-                logger.info(f"Current det => {round(curr_det, 5)}")
-                logger.info(f"NDMCC => {round(non_diagonal_max_corrcoef, 3)}")
-                logger.info(f"SSD => {round(SSD(E), 3)}")
+                Xmap = B.t().cpu().numpy()
+                # non_diagonal_max_corrcoef = max_correl(E)
+                NDMCC = max_correl(E)
+                # curr_det = det(E)
+                # ssd_value = SSD(E)
+                # logger.info(f"Current det => {round(curr_det, 5)}")
+                # logger.info(f"NDMCC => {round(non_diagonal_max_corrcoef, 3)}")
+                # logger.info(f"SSD => {round(SSD(E), 3)}")
                 # if curr_det > max_det:
-                if non_diagonal_max_corrcoef < min_max_corrcoef:
-                    # if ssd_value < min_SSD:
-                    min_max_corrcoef = non_diagonal_max_corrcoef
-                    # min_SSD = ssd_value
-                    logger.info("MIN!")
-                    # logger.info("MAX!")
-                    # max_det = curr_det
-                    best_E = E
-                    best_A = A
-                    self.Xmap = B.t().cpu().numpy()
+                # if non_diagonal_max_corrcoef < min_max_corrcoef:
+                #     # if ssd_value < min_SSD:
+                #     min_max_corrcoef = non_diagonal_max_corrcoef
+                #     # min_SSD = ssd_value
+                #     logger.info("MIN!")
+                # logger.info("MAX!")
+                # max_det = curr_det
+                # Store results
+                results[run] = {
+                    "NDMCC": NDMCC,
+                    "E": E,
+                    "A": A,
+                    "Xmap": Xmap,
+                    "fit_l1": fit_l1,
+                    "factA": factA,
+                    "factB": factB,
+                }
 
-                    self.endmembers.append(E)
+        min_fit_l1 = np.min([v["fit_l1"] for k, v in results.items()])
+
+        def fit_l1_cutoff(idx, tol=0.05):
+            val = results[idx]["fit_l1"]
+            return (abs(val - min_fit_l1) / abs(val)) < tol
+
+        sorted_indices = sorted(
+            filter(fit_l1_cutoff, results),
+            key=lambda x: results[x]["NDMCC"],
+        )
+
+        for ii in sorted_indices[: min(len(sorted_indices), 10)]:
+            self.endmembers.append(results[ii]["E"])
+
+        best_result_idx = sorted_indices[0]
+        best_result = results[best_result_idx]
+
+        best_E = best_result["E"]
+        best_A = best_result["A"]
+        self.Xmap = best_result["Xmap"]
+        # best_E = E
+        # best_A = A
+        # self.Xmap = B.t().cpu().numpy()
+
+        # self.endmembers.append(E)
 
         toc = time.time()
         elapsed_time = round(toc - tic, 2)

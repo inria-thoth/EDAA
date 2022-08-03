@@ -1,24 +1,31 @@
 import logging
 import os
 
+import numpy as np
 import scipy.io as sio
 from hsi_unmixing.data.datasets.base import HSI
-from hsi_unmixing.models.aligners import MunkresAbundancesAligner
-from hsi_unmixing.models.metrics import (MeanSquareError, RMSEAggregator,
-                                         SADAggregator)
+from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
+from hsi_unmixing.data.normalizers import RawInput
+from hsi_unmixing.models.aligners import (CustomAbundancesAligner,
+                                          MunkresAbundancesAligner,
+                                          MunkresAligner)
+from hsi_unmixing.models.metrics import (MeanAbsoluteError, MeanSquareError,
+                                         RMSEAggregator, SADAggregator,
+                                         SpectralAngleDistance)
+from hsi_unmixing.utils import save_estimates
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def show_abunds(dataset):
-    E, A = load_results(dataset)
+# def show_abunds(dataset):
+#     E, A = load_results(dataset)
 
-    h, w, p = A.shape
-    A = A.transpose((2, 0, 1))
-    A = A.reshape(p, h * w)
+#     h, w, p = A.shape
+#     A = A.transpose((2, 0, 1))
+#     A = A.reshape(p, h * w)
 
-    hsi = HSI("SamsonFixed.mat")
+#     hsi = HSI("SamsonFixed.mat")
 
 
 def load_results(dataset):
@@ -53,17 +60,25 @@ def main(dataset):
 
     # Get HSI
     # hsi = HSI("TinyAPEX.mat")
-    hsi = HSI("WDC.mat")
+    # hsi = HSI("WDC.mat")
     # hsi = HSI("Urban4.mat")
     # hsi = HSI("SamsonFixed.mat")
-    # hsi = HSI("Samson.mat")
+    # hsi = HSI("JasperRidge.mat", normalizer=RawInput())
+    # hsi = HSI("Urban6.mat", normalizer=PL2())
+    # hsi = HSI("TinyAPEX.mat", normalizer=PL2())
+    # hsi = HSI("WDC.mat", normalizer=RawInput())
+    hsi = HSI("WDC.mat", normalizer=PL2())
+    # hsi = HSI("Samson.mat", normalizer=PL2())
+    # hsi = HSI("JasperRidge.mat", normalizer=PL2())
+
     # hsi = HSI("JasperRidge.mat")
 
     # # Aligner
     # criterion = MeanAbsoluteError()
+    # criterion = SpectralAngleDistance()
     # aligner = MunkresAligner(hsi=hsi, criterion=criterion)
 
-    # # Align data
+    # Align data
     # E1 = aligner.fit_transform(E)
     # A1 = aligner.transform_abundances(A)
     criterion = MeanSquareError()
@@ -72,6 +87,20 @@ def main(dataset):
     # Align data
     A1 = aligner.fit_transform(A)
     E1 = aligner.transform_endmembers(E)
+
+    # P = np.zeros((p, p))
+    # # P[0, 2] = 1
+    # # P[1, 0] = 1
+    # # P[2, 1] = 1
+    # P[2, 0] = 1
+    # P[0, 1] = 1
+    # P[1, 2] = 1
+
+    # # Custom alignment
+    # aligner = CustomAbundancesAligner(hsi=hsi, criterion=criterion, P=P)
+
+    # A1 = aligner.fit_transform(A)
+    # E1 = aligner.transform_endmembers(E)
 
     # Add run
     RMSE.add_run(0, hsi.A, A1, hsi.labels)
@@ -83,10 +112,13 @@ def main(dataset):
     RMSE.aggregate()
     SAD.aggregate()
 
+    save_estimates(E1, A1, hsi)
+
 
 if __name__ == "__main__":
     # main("Apex")
     main("WDC")
-    # main("Urban4")
+    # main("Urban6")
     # main("SamsonOld")
     # main("JasperRidge")
+    # main("Urban4")

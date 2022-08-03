@@ -249,6 +249,15 @@ class BaseAbundancesAligner:
         return msg
 
 
+class CustomAbundancesAligner(BaseAbundancesAligner):
+    def __init__(self, P, **kwargs):
+        super().__init__(**kwargs)
+        self.P = P
+
+    def fit(self, A):
+        logger.debug("Doing nothing here as P is user-defined")
+
+
 class MunkresAbundancesAligner(BaseAbundancesAligner):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

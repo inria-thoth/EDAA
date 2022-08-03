@@ -5,7 +5,7 @@ from hydra.utils import instantiate
 from sklearn.cluster import KMeans
 
 from hsi_unmixing.models.metrics import RMSEAggregator, SADAggregator
-from hsi_unmixing.models.supervised import DecompSimplex
+from hsi_unmixing.models.supervised import EDAAE, DecompSimplex
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -31,7 +31,7 @@ def main(cfg):
             setter=setter,
             normalizer=normalizer,
         )
-        # hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
+        hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
 
         # E0 = initializer.init_like(hsi, seed=run)
 
@@ -73,8 +73,10 @@ def main(cfg):
         # logger.info(f"Sparsity => {sparsity_printable}")
 
         # E1 = aligner.fit_transform(E0)
-        DS = DecompSimplex()
-        A0 = DS.solve(Y, E0)
+        # AE = DecompSimplex()
+        AE = EDAAE()
+
+        A0 = AE.solve(Y, E0)
         # A1 = aligner.transform_abundances(A0)
         A1 = aligner.fit_transform(A0)
         E1 = aligner.transform_endmembers(E0)

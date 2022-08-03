@@ -1,5 +1,4 @@
 import logging
-import pdb
 
 from .base import HSI
 
@@ -13,5 +12,14 @@ class WDCDataset(HSI):
 
 
 if __name__ == "__main__":
-    hsi = WDCDataset()
+
+    from hsi_unmixing.data.normalizers import BandwiseMinMax as BMM
+    from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
+
+    normalizer = BMM()
+    # normalizer = PL2()
+
+    hsi = WDCDataset(normalizer=normalizer)
     print(hsi)
+    hsi.plot_hsi(channels=[150, 75, 20], sort_channels=False)
+    # hsi.plot_endmembers()

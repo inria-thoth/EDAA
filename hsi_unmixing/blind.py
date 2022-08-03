@@ -4,6 +4,7 @@ import pdb
 from hydra.utils import instantiate
 
 from hsi_unmixing.models.metrics import RMSEAggregator, SADAggregator
+from hsi_unmixing.utils import save_estimates
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -48,8 +49,8 @@ def main(cfg):
         E0, A0 = model.solve(
             Y,
             hsi.p,
-            E0=E0,
-            # E0=None,
+            # E0=E0,
+            E0=None,
             hsi=hsi,
             H=hsi.H,
             W=hsi.W,
@@ -100,3 +101,6 @@ def main(cfg):
 
     RMSE.aggregate()
     SAD.aggregate()
+
+    # NOTE Save last estimates
+    save_estimates(E1, A1, hsi)

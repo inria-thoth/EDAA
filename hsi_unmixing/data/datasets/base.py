@@ -161,7 +161,8 @@ class HSI:
         # if normalize:
         #     title += " ($l_\infty$-normalized)"
         #     ylabel += " Normalized"
-        plt.figure(figsize=(12, 4))
+        # plt.figure(figsize=(12, 4))
+        plt.figure(figsize=(6, 6))
         for pp in range(self.p):
             data = E[:, pp]
             # if normalize:
@@ -261,6 +262,7 @@ class HSI:
         channels=None,
         seed=0,
         sort_channels=True,
+        transpose=False,
     ):
 
         if channels is None:
@@ -283,15 +285,21 @@ class HSI:
 
         # Plot the image
         img = Y.reshape(self.L, self.H, self.W)
-        img = img.transpose(1, 2, 0)
+        # img = img.transpose(1, 2, 0)
+        if transpose:
+            img = img.transpose(2, 1, 0)
+        else:
+            img = img.transpose(1, 2, 0)
         img = img / img.max()
 
         colors = {key: value for (key, value) in zip("RGB", channels)}
         title = f"{self.shortname} Observation [SNR={SNR}dB]\n"
         title += "Colors: ("
         title += ", ".join([f"{k}:{v}" for (k, v) in colors.items()]) + ")\n"
+        plt.figure(figsize=(6, 6))
         plt.title(title)
         plt.imshow(img[:, :, channels])
+        plt.axis("off")
         plt.show()
 
     def plot_contributions(

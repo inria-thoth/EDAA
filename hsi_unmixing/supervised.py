@@ -1,10 +1,10 @@
 import logging
-import pdb
 
 import torch
 from hydra.utils import instantiate
 
 from hsi_unmixing.models.metrics import RMSEAggregator, SADAggregator
+from hsi_unmixing.utils import save_estimates
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -82,3 +82,6 @@ def main(cfg):
 
     RMSE.aggregate()
     SAD.aggregate()
+
+    # NOTE Save last estimates
+    save_estimates(E1, A1, hsi)
