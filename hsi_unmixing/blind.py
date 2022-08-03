@@ -46,6 +46,8 @@ def main(cfg):
             Y,
             hsi.p,
             seed=run,
+            H=hsi.H,
+            W=hsi.W,
         )
 
         A1 = aligner.fit_transform(A0)
