@@ -1,0 +1,8 @@
+name: "besteffort"
+filename: "${launcher.name}.sh"
+hours: 24
+gpumodel: Null
+gpumem: Null
+besteffort: True
+idempotent: True
+cmd: "main.py"

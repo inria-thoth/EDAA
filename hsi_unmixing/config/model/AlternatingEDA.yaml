@@ -1,0 +1,17 @@
+_target_: hsi_unmixing.models.blind.AlternatingEDA
+epsilon: 5e-3
+eta0A: 1.0
+eta0B: 0.001
+KA: 100
+KB: 100
+A_init: "softmax"
+B_init: "pSVD"
+schemeA: "flat"
+schemeB: "flat"
+nb_alternating: 100
+device: Null
+use_projection: False
+entropic_regularization: False
+denoise: False
+log_every_n_steps: 10
+coef: 1

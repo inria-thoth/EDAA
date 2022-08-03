@@ -1,29 +1,35 @@
+mode: "supervised"
+seed: 0
+SNR: Null
+runs: 1
+nruns: 10
+display: False
+torch: False
+wandb: False
+
 defaults:
-  - data: simulated
-  - model: SC_ASCpw
-  - trainer: default_trainer
-  - optimizer: adam
+  - dataset : SDC
+  - normalizer: PixelwiseL2Norm
+  - setter: DS
+  - initializer: VCA
+  - model: EDAv1
+  - aligner: munkresA
+  - noise: AWGN
+  - criterion: MSE
+  - cluster: OAR
+  - launcher: default
+  - _self_
 
-load_ckpt: null
 
-checkpoint:
-  dirpath: "ckpts"
-  save_last: True
-  save_top_k: 1
-  period: 1
-  mode: "min"
-  filename: "{epoch}"
-
-seed: 42
-stdout: ${trainer.logging_level}
-id: "${model.id}_${data.id}"
+stdout: DEBUG
 
 hydra:
   run:
-    dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/${id}"
+    # dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/${id}"
+    dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}"
   sweep:
     dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/"
-    subdir: "${id}"
+    # subdir: "${id}"
   job_logging:
     version: 1
     formatters:

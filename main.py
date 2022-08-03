@@ -2,140 +2,50 @@ import logging
 import os
 import pdb
 import shutil
-import time
 
 import hydra
-import torch
-import torch.nn.functional as F
+from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
-from torch.optim import Adam
-from torch.utils.data import DataLoader
-import numpy as np
-
-from hsi_unmixing import data, models
-from hsi_unmixing.models import SparseCoding_pw, SC_ASC_pw, EDA
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def train_model(model, dataloader, optimizer, epochs=300, device="cpu"):
-
-    model = model.to(device)
-
-    for epoch in range(1, epochs):
-
-        model.train()
-        training_loss = 0.0
-        rec_loss_logs = 0.0
-        asc_loss_logs = 0.0
-        all_sums = np.array([])
-        val_loss = 0.0
-
-        for batch in dataloader:
-            pixel, abund = batch
-            pixel = pixel.to(device)
-            abund = abund.to(device)
-            optimizer.zero_grad()
-            pixel_hat, codes = model(pixel)
-            sum_to_one = codes.sum(1)
-            all_sums = np.append(
-                all_sums,
-                sum_to_one.cpu().detach().numpy(),
-            )
-            rec_loss = F.mse_loss(pixel_hat, pixel)
-            # Use ASC penalty here
-            # asc_loss = torch.sum(ASC_penalty(codes, 0.03))
-            asc_loss = model.ASC(codes)
-            loss = rec_loss + asc_loss
-            loss.backward()
-            optimizer.step()
-            training_loss += loss.item()
-            rec_loss_logs += rec_loss.item()
-            asc_loss_logs += asc_loss.item()
-            with torch.no_grad():
-                val_loss += F.mse_loss(codes, abund).item()
-        training_loss /= len(batch[0])
-        rec_loss_logs /= len(batch[0])
-        asc_loss_logs /= len(batch[0])
-        val_loss /= len(batch[0])
-
-        # if epoch == 1 or epoch % 10 == 0:
-        nu = torch.clip(model.ASC.nu, model.ASC.EPS, 1.0)
-        avg_sum = np.mean(all_sums)
-        std_sum = np.std(all_sums)
-
-        print(
-            f"Epoch {epoch}\t Loss: {training_loss:e}\t "
-            f"Rec: {rec_loss_logs:e}\t ASC: {asc_loss_logs:e}\t"
-            f"Clipped Nu: {nu.item():e}\t Eta: {model.eta.item():e}\t"
-            f"Gamma: {model.gamma.item():e}\t AVG: {avg_sum:e}\t"
-            f"STD: {std_sum:e}\t Val Loss: {val_loss:e}\t",
-        )
-
-    return model
-
-
-def evaluate_model(model, dataloader, device="cpu"):
-
-    model = model.to(device)
-
-    model.eval()
-    validation_loss = 0.0
-
-    for idx, batch in enumerate(dataloader):
-        pixel, abund = batch
-        pixel = pixel.to(device)
-        abund = abund.to(device)
-        pixel_hat, codes = model(pixel)
-        loss = F.mse_loss(codes, abund)
-        validation_loss += loss.item()
-    validation_loss = validation_loss / len(batch[0])
-    print(" validation loss: %5.2f" % (validation_loss))
-
-
-# dset = data.SimulatedPatches("./data")
-# dset = data.SimulatedPixels("./data")
-dset = data.SimulatedDataCubes()
-
-
 @hydra.main(config_path="hsi_unmixing/config", config_name="config")
-def train(cfg):
+def main(cfg: DictConfig) -> None:
 
-    # Load pre-existing config file
+    logger.info(f"Current working directory: {os.getcwd()}")
+
     if os.path.exists("config.yaml"):
-        logging.info("Loading previous config file")
-        cfg = OmegaConf.load("config.yaml")
+        logger.info("Loading pre-existing config file")
+        hydra_cfg = HydraConfig.get()
+        overrides = hydra_cfg.overrides.task
+        cfg = hydra.compose("config.yaml", overrides=overrides)
     else:
-        # copy config file into running directory
+        # copy initial config to a separate file to avoid overwriting it
+        # when hydra resumes training and initializes again
         shutil.copy2(".hydra/config.yaml", "config.yaml")
 
-    # Check for checkpoint
-    ckpt_path = os.path.join(os.getcwd(), cfg.checkpoint.dirpath, "last.ckpt")
-    if os.path.exists(ckpt_path):
-        logging.info("Loading existing checkpoint @ {ckpt_path}")
-    else:
-        logging.info("No existing ckpt found. Training from scratch")
-        ckpt_path = None
+    logger.debug(OmegaConf.to_yaml(cfg))
 
-    train_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=True)
-    valid_dataloader = DataLoader(dset, cfg.data.batch_size, shuffle=False)
-    model = EDA(**cfg.model.params)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    epochs = 450
-    trained_model = train_model(
-        model,
-        train_dataloader,
-        optimizer,
-        epochs,
-        device,
-    )
-    evaluate_model(trained_model, valid_dataloader, device)
+    mode = cfg.mode
+
+    if mode == "blind":
+        from hsi_unmixing.blind import main as _main
+    elif mode == "supervised":
+        from hsi_unmixing.supervised import main as _main
+    elif mode == "multistop":
+        from hsi_unmixing.multistop import main as _main
+    elif mode == "clustering":
+        from hsi_unmixing.clustering import main as _main
+    else:
+        raise ValueError(f"Mode {mode} is invalid")
+
+    try:
+        _main(cfg)
+    except Exception as e:
+        logger.critical(e, exc_info=True)
 
 
 if __name__ == "__main__":
-    try:
-        train()
-    except Exception as e:
-        logger.critical(e, exc_info=True)
+    main()

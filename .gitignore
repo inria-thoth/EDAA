@@ -1,5 +1,7 @@
 # Custom data folder
 /data
+*.json
+*.mat
 
 # Helper notebook
 /notebooks
