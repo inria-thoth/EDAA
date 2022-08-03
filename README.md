@@ -22,6 +22,12 @@ $ conda create --name hsu --file conda.txt
 $ pip install -r requirements.txt
 ```
 
+---
+
+### Run matlab code in Python
+
+It is possible to run the [NMF-QMV](https://github.com/LinaZhuang/NMF-QMV_demo) code inside Python to make sure that the reported results are consistent across methods.
+
 To install `matlab.engine`, first visit the official [webpage](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html).
 
   1. Locate `matlabroot` (e.g. `~/softwares/matlab-2020b/`)
@@ -38,8 +44,10 @@ $ python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
 
 ## Getting started
 
-Command to start training the model on the `Urban4` dataset with `centering`:
+This repository uses [hydra](https://hydra.cc/) to seamlessly manage configurations.
+
+To run the `EDA` model on the `Samson` dataset, use the following command:
 
 ```
-$ python main.py dataset=Urban4 mode=multistop model=DSEDA stdout=DEBUG model.epsilon=0.001 torch=True model.T=10 model.Ainit=Bt normalizer=PixelwiseL2Norm model.centering=True
+$ python main.py dataset=Samson mode=blind model=BlindEDA
 ```
