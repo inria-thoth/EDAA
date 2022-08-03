@@ -1,5 +1,4 @@
 import logging
-import pdb
 
 from .base import HSI
 
@@ -22,21 +21,10 @@ class Urban6Dataset(HSI):
         super().__init__("Urban6.mat", **kwargs)
 
 
-class Urban4RadiusDataset(HSI):
-    def __init__(self, radius, **kwargs):
-        super().__init__(f"Urban4_r{radius}.mat", **kwargs)
-
-
 if __name__ == "__main__":
-    import matplotlib
-    import matplotlib.pyplot as plt
     from hsi_unmixing.data.normalizers import BandwiseMinMax as BMM
     from hsi_unmixing.data.normalizers import GlobalMinMax as GMM
     from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
-
-    matplotlib.use("TKAgg")
-
-    # plt.use("TKAgg")
 
     # normalizer = PL2()
     # normalizer = GMM()
@@ -48,16 +36,3 @@ if __name__ == "__main__":
         sort_channels=False,
         transpose=True,
     )
-    # hsi.plot_endmembers()
-    # hsi5 = Urban5Dataset(normalizer=normalizer)
-    # print(hsi5)
-    # hsi4.plot_endmembers(normalize=False)
-    # hsi4.plot_abundances(transpose=True)
-    # hsi5 = Urban5Dataset()
-    # print(hsi5)
-    # # hsi5.plot_endmembers(normalize=False)
-    # hsi6 = Urban6Dataset()
-    # print(hsi6)
-    # hsi6.plot_endmembers(normalize=True)
-    # hsi6.plot_endmembers(normalize=False)
-    # # hsi6.plot_abundances(transpose=True)

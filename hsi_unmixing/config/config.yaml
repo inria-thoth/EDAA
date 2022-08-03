@@ -1,23 +1,19 @@
-mode: "supervised"
+mode: "blind"
 seed: 0
 SNR: Null
 runs: 1
-nruns: 10
 display: False
 torch: False
-wandb: False
 
 defaults:
-  - dataset : SDC
+  - dataset : Samson
   - normalizer: PixelwiseL2Norm
   - setter: DS
   - initializer: VCA
-  - model: EDAv1
+  - model: BlindEDA
   - aligner: munkresA
   - noise: AWGN
   - criterion: MSE
-  - cluster: OAR
-  - launcher: default
   - _self_
 
 
@@ -25,11 +21,9 @@ stdout: DEBUG
 
 hydra:
   run:
-    # dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/${id}"
     dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}"
   sweep:
     dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/"
-    # subdir: "${id}"
   job_logging:
     version: 1
     formatters:

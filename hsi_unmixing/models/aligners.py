@@ -1,9 +1,7 @@
 import logging
 import pdb
 
-# import hsi_unmixing.models.metrics as criterions
 import numpy as np
-# from hungarian_algorithm import algorithm as HA
 from munkres import Munkres
 
 logger = logging.getLogger(__name__)
@@ -13,7 +11,6 @@ logger.setLevel(logging.DEBUG)
 class BaseAligner:
     def __init__(self, hsi, criterion):
         self.Eref = hsi.E
-        # self.criterion = criterions.__dict__[criterion]()
         self.criterion = criterion
         self.P = None
         self.dists = None
@@ -36,13 +33,9 @@ class BaseAligner:
         return self.P.T @ A
 
     def fit_transform(self, E):
-        # tic = time.time()
 
         self.fit(E)
         res = self.transform(E)
-
-        # tac = time.time()
-        # logger.debug(f"{self} took {tac - tic:.2f}s...")
 
         return res
 
@@ -100,78 +93,6 @@ class GreedyAligner(BaseAligner):
             d[:, idx[1]] = np.inf
 
         self.P = P
-
-
-# class HungarianAlgorithmAligner(BaseAligner):
-#     def __init__(self, hsi, **kwargs):
-#         super().__init__(hsi=hsi, **kwargs)
-#         self.labels = {
-#             str(ii): label
-#             for ii, label in enumerate(
-#                 hsi.labels,
-#             )
-#         }
-#         self.reverse_labels = {v: k for k, v in self.labels.items()}
-
-#     def fit(self, E):
-#         """
-#         Alignment based on distances matrix using Hungarian Algorithm
-
-#         Parameters:
-#             E: `numpy array`
-#                 2D matrix of endmembers (L x p)
-
-#         Records:
-#             dists: `numpy array`
-#                 2D distance matrix between estimated and GT endmembers (p x p)
-
-#             P: `numpy array`
-#                 2D permutation matrix (p x p)
-#             Permutes the columns to align the endmembers
-#             according to ground truth
-
-#         Source: https://github.com/benchaplin/hungarian-algorithm
-#         """
-
-#         self.dists = self.criterion(E, self.Eref)
-
-#         # Initialization
-#         self.P = None
-#         # Create graph for hungarian algorithm (HA)
-#         G = self.create_graph()
-#         # pdb.set_trace()
-#         # Find matching
-#         results = HA.find_matching(
-#             G,
-#             matching_type="min",
-#             return_type="list",
-#         )
-#         # Convert matching to permutation matrix
-#         self.matching2matrix(results)
-
-#     def create_graph(self):
-#         p = self.dists.shape[0]
-#         assert p == self.dists.shape[1]
-#         G = {
-#             str(ii): {self.labels[str(jj)]: self.dists[ii, jj] for jj in range(p)}
-#             for ii in range(p)
-#         }
-#         return G
-
-#     def matching2matrix(self, results):
-#         """
-#         Build a permutation matrix based on the HA results list output
-#         """
-#         # Initialization
-#         p = len(results)
-#         P = np.zeros((p, p))
-
-#         for result in results:
-#             pair, weight = result
-#             _from, _to_label = pair
-#             P[int(_from), int(self.reverse_labels[_to_label])] = 1.0
-
-#         self.P = P
 
 
 class MunkresAligner(BaseAligner):
@@ -249,22 +170,12 @@ class BaseAbundancesAligner:
         return msg
 
 
-class CustomAbundancesAligner(BaseAbundancesAligner):
-    def __init__(self, P, **kwargs):
-        super().__init__(**kwargs)
-        self.P = P
-
-    def fit(self, A):
-        logger.debug("Doing nothing here as P is user-defined")
-
-
 class MunkresAbundancesAligner(BaseAbundancesAligner):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def fit(self, A):
 
-        # breakpoint()
         # Computing distance matrix
         self.dists = self.criterion(A.T, self.Aref.T)
 
@@ -281,41 +192,4 @@ class MunkresAbundancesAligner(BaseAbundancesAligner):
 
 
 if __name__ == "__main__":
-
-    from hsi_unmixing.data.datasets.base import HSI
-    from hsi_unmixing.models.metrics import MeanAbsoluteError as MAE
-    from hsi_unmixing.models.metrics import MeanSquareError as MSE
-
-    # hsi = HSI("Samson.mat", figs_dir=None)
-    hsi = HSI("WDC.mat")
-    # Eref = hsi.E
-    # L, p = Eref.shape
-    Aref = hsi.A
-    p, N = Aref.shape
-
-    generator = np.random.RandomState(seed=0)
-    Q = generator.permutation(np.eye(p))
-    # E = Eref @ Q + 0.001 * generator.randn(L, p)
-    A = Q @ Aref + 0.001 * generator.randn(p, N)
-
-    # metric = "MeanAbsoluteError"
-
-    criterion = MSE()
-
-    # for cls in [
-    #     NoneAligner,
-    #     GreedyAligner,
-    #     # HungarianAlgorithmAligner,
-    # ]:
-    for cls in [MunkresAbundancesAligner]:
-        aligner = cls(hsi=hsi, criterion=criterion)
-        Ahat = aligner.fit_transform(A)
-
-        # aligner = cls(hsi=hsi, criterion=criterion)
-        # Ehat = aligner.fit_transform(E)
-
-        print(f"{aligner}")
-        print("-" * 15)
-        print(f"Generated permutation:\n{Q}")
-        print(f"Estimated permutation:\n{aligner.P}")
-        print(f"Transposed estimated permutation:\n{aligner.P.T}")
+    pass

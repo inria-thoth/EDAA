@@ -1,8 +1,4 @@
 import logging
-import pdb
-
-from hsi_unmixing.data.normalizers import BandwiseMinMax as BMM
-from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
 
 from .base import HSI
 
@@ -15,16 +11,12 @@ class SamsonDataset(HSI):
         super().__init__("Samson.mat", **kwargs)
 
 
-class SamsonFixedDataset(HSI):
-    def __init__(self, **kwargs):
-        super().__init__("SamsonFixed.mat", **kwargs)
-
-
 if __name__ == "__main__":
+    from hsi_unmixing.data.normalizers import BandwiseMinMax as BMM
+    from hsi_unmixing.data.normalizers import PixelwiseL2Norm as PL2
 
     normalizer = PL2()
     # normalizer = BMM()
-    # normalizer = None
 
     hsi = SamsonDataset(normalizer=normalizer)
     print(hsi)

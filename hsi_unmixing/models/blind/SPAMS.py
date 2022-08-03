@@ -65,29 +65,3 @@ class ArchetypalAnalysis:
 
         logger.info(f"{self} took {self.time}s")
         return self.E, self.A
-
-
-if __name__ == "__main__":
-    from hsi_unmixing.data.datasets.base import HSI
-    from hsi_unmixing.models.aligners import GreedyAligner as GA
-    from hsi_unmixing.models.initializers import VCA
-
-    hsi = HSI("Samson.mat")
-
-    vca = VCA()
-    Einit = vca.init_like(hsi)
-    solver = ArchetypalAnalysis()
-    E0, A0 = solver.solve(hsi.Y, hsi.p, E0=Einit)
-
-    aligner = GA(hsi, "MeanAbsoluteError")
-    Ehat = aligner.fit_transform(E0)
-    Ahat = aligner.transform_abundances(A0)
-
-    # hsi.plot_abundances(transpose=True)
-    # hsi.plot_abundances(transpose=True, A0=Ahat)
-
-    # hsi.plot_endmembers()
-    # hsi.plot_endmembers(E0=Ehat)
-
-    Xhat = aligner.transform_abundances(solver.Xmap)
-    hsi.plot_contributions(transpose=True, X0=Xhat, method=solver)

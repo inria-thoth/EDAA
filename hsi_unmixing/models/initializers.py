@@ -1,5 +1,4 @@
 import logging
-import pdb
 
 import numpy as np
 import numpy.linalg as LA
@@ -192,16 +191,4 @@ class VCA(BaseInit):
 
 
 if __name__ == "__main__":
-    from hsi_unmixing.data.datasets.base import HSI
-
-    hsi = HSI("Samson.mat")
-
-    # hsi.plot_endmembers()
-
-    # initializer = TrueEndmembers()
-    # initializer = RandomPositiveMatrix()
-    # initializer = RandomPixels()
-    initializer = VCA()
-    E = initializer.init_like(hsi)
-
-    hsi.plot_endmembers(E0=E)
+    pass

@@ -1,6 +1,0 @@
-_target_: hsi_unmixing.models.blind.EDAv1
-epsilon: 0
-Ka: 100
-Kb: 100
-T: 100
-
