@@ -87,10 +87,10 @@ class BlindEDA:
                 self.etaB = self.etaA * ((p / N) ** 0.5)
 
                 for ii in range(self.T):
-                    for kk in range(self.Ka):
+                    for kk in range(self.K1):
                         A = update(A, -self.etaA * grad_A(A, B))
 
-                    for kk in range(self.Kb):
+                    for kk in range(self.K2):
                         B = update(B, -self.etaB * grad_B(A, B))
 
                 fit_m = residual_l1(A, B).item()
@@ -99,7 +99,7 @@ class BlindEDA:
                 Xmap = B.t().cpu().numpy()
                 Rm = max_correl(E)
                 # Store results
-                results[run] = {
+                results[m] = {
                     "Rm": Rm,
                     "Em": E,
                     "Am": A,

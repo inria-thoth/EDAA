@@ -3,7 +3,7 @@ seed: 0
 SNR: Null
 runs: 1
 display: False
-torch: False
+torch: True
 
 defaults:
   - dataset : Samson
