@@ -44,10 +44,49 @@ $ python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
 
 ## Getting started
 
-This repository uses [hydra](https://hydra.cc/) to seamlessly manage configurations.
+This repository uses [hydra](https://hydra.cc/) to seamlessly manage different configurations over the command line.
 
 To run the `EDA` model on the `Samson` dataset, use the following command:
 
 ```
 $ python main.py dataset=Samson mode=blind model=BlindEDA
+```
+
+The different datasets available are listed under `./hsi_unmixing/config/dataset`:
+
+* Samson
+* JasperRidge
+* Urban{4,5,6}
+* TinyAPEX
+* WDC
+
+To run the `EDA` model on all datasets, use the following command:
+
+```
+$ python main.py dataset=Samson,JasperRidge,Urban4,Urban6,TinyAPEX,WDC mode=blind model=BlindEDA --multirun
+```
+
+---
+
+## Other methods
+
+This repository implements other supervised and blind hyperspectral unmixing techniques:
+
+* **Supervised methods**
+  * FCLSU using `VCA` (Python implementation) and DecompSimplex (`DS`) from `SPAMS` .
+  * FCLSU using `VCA` (Python implementation) and `FCLS` from `pysptools` (slower).
+
+Command to run FCLSU using VCA+DS on Samson:
+```
+$ python main.py dataset=Samson mode=supervised torch=False model=DS
+```
+
+* **Blind methods**
+  * `NMF-QMV` using a Python wrapper on the Matlab implementation.
+  * Archetypal Analysis (`AA`) from `SPAMS`.
+  * Robust AA (`RAA`) from `SPAMS`
+  
+Command to run robust AA on Samson:
+```
+$ python main.py dataset=Samson mode=blind torch=False model=AA model.params.robust=True
 ```
