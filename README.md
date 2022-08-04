@@ -84,9 +84,9 @@ $ python main.py dataset=Samson mode=supervised torch=False model=DS
 * **Blind methods**
   * `NMF-QMV` using a Python wrapper on the Matlab implementation.
   * Archetypal Analysis (`AA`) from `SPAMS`.
-  * Robust AA (`RAA`) from `SPAMS`
+  * Robust AA (`RAA`) from `SPAMS`.
   
-Command to run robust AA on Samson:
+Command to run `RAA` on Samson:
 ```
-$ python main.py dataset=Samson mode=blind torch=False model=AA model.params.robust=True
+$ python main.py dataset=Samson mode=blind torch=False model=RAA
 ```
