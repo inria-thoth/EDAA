@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This repository implements various unmixing methods (supervised and blind) on different datasets.
+This repository implements various unmixing methods (supervised and blind) on several standard real datasets.
 
 ---
 
@@ -15,11 +15,16 @@ This repository was developed using Ubuntu 20.04 LTS, Python 3.8.8 and MATLAB 20
 We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
 
 ```
-$ conda create --name hsu --file conda.txt
+conda create --name hsu --file conda.txt
+```
+
+Activate the new `conda` environment to install the Python packages and run the code:
+```
+conda activate hsu
 ```
 
 ```
-$ pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ---
@@ -35,9 +40,21 @@ To install `matlab.engine`, first visit the official [webpage](https://www.mathw
   3. Locate your current `conda` environment (e.g. `~/conda/envs/hsu`)
 
 ```
-$ cd $matlabroot/extern/engines/python
-$ conda activate hsu
-$ python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
+cd $matlabroot/extern/engines/python
+conda activate hsu
+python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
+```
+
+---
+
+### Data download
+
+The data is already included in the repository inside a `zip` file.
+
+To extract it in the appropriate `./data` directory, simply run:
+
+```
+python -m utils.prepare_datasets
 ```
 
 ---
@@ -49,7 +66,7 @@ This repository uses [hydra](https://hydra.cc/) to seamlessly manage different c
 To run the `EDA` model on the `Samson` dataset, use the following command:
 
 ```
-$ python main.py dataset=Samson mode=blind model=BlindEDA
+python main.py dataset=Samson mode=blind model=BlindEDA
 ```
 
 The different datasets available are listed under `./hsi_unmixing/config/dataset`:
@@ -63,7 +80,7 @@ The different datasets available are listed under `./hsi_unmixing/config/dataset
 To run the `EDA` model on all datasets, use the following command:
 
 ```
-$ python main.py dataset=Samson,JasperRidge,Urban4,Urban6,TinyAPEX,WDC mode=blind model=BlindEDA --multirun
+python main.py dataset=Samson,JasperRidge,Urban4,Urban6,TinyAPEX,WDC mode=blind model=BlindEDA --multirun
 ```
 
 ---
@@ -78,7 +95,7 @@ This repository implements other supervised and blind hyperspectral unmixing tec
 
 Command to run FCLSU using VCA+DS on Samson:
 ```
-$ python main.py dataset=Samson mode=supervised torch=False model=DS
+python main.py dataset=Samson mode=supervised torch=False model=DS initializer=VCA
 ```
 
 * **Blind methods**
@@ -88,5 +105,5 @@ $ python main.py dataset=Samson mode=supervised torch=False model=DS
   
 Command to run `RAA` on Samson:
 ```
-$ python main.py dataset=Samson mode=blind torch=False model=RAA
+python main.py dataset=Samson mode=blind torch=False model=RAA
 ```
