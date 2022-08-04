@@ -1,6 +1,5 @@
 import logging
 import os
-import pdb
 import time
 import warnings
 
@@ -20,6 +19,10 @@ logger.setLevel(logging.DEBUG)
 
 
 class NMFQMV:
+    """
+    Python wrapper on the NMF-QMV matlab code found at https://github.com/LinaZhuang/NMF-QMV_demo
+    """
+
     def __init__(
         self,
         beta_candidates=np.logspace(-2, 2, 5),
@@ -27,7 +30,7 @@ class NMFQMV:
         path_to_NMFQMV: str = VALID_PATHS[0],
         drawfigs: str = "no",
     ):
-        assert os.path.exists(path_to_NMFQMV)
+        assert os.path.exists(path_to_NMFQMV), "Change path to your location of NMFQMV"
 
         self.term = term
         self.betas = beta_candidates
@@ -70,14 +73,3 @@ class NMFQMV:
         logger.info(f"{self} took {self.time}s")
 
         return self.E, self.A
-
-
-if __name__ == "__main__":
-    L, H, W = 32, 16, 16
-    p = 3
-
-    img = np.random.rand(L * H * W).reshape(H, W, L)
-
-    solver = NMFQMV()
-
-    solver.solve(img, p)

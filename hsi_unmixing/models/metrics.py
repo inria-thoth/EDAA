@@ -18,15 +18,7 @@ class BaseMetric:
     @staticmethod
     def _check_input(X, Xref):
         assert X.shape == Xref.shape
-        # Expect => L (# HSI channels) x p (# endmembers)
-        # assert E.shape[0] > E.shape[1]
         assert type(X) == type(Xref)
-
-        # if isinstance(X, torch.Tensor):
-        #     logger.debug("Convert tensors to arrays in Metric class...")
-        #     X = X.detach().numpy()
-        #     Xref = Xref.detach().numpy()
-
         return X, Xref
 
     def __call__(self, X, Xref):
@@ -90,11 +82,6 @@ class aRMSE(BaseMetric):
 
     def __call__(self, A, Aref):
         A, Aref = self._check_input(A, Aref)
-
-        # Expect abundances: p (# endmembers) x N (# pixels)
-        # assert A.shape[0] < A.shape[1]
-
-        # return 100 * np.sqrt(((A - Aref) ** 2).mean(0)).mean(0)
         return 100 * np.sqrt(((A - Aref) ** 2).mean())
 
 
@@ -110,8 +97,6 @@ class RunAggregator:
         self.metric = metric
         self.use_endmembers = use_endmembers
         self.filename = f"{metric}.json"
-        # self.A_metrics = {"RMSE": aRMSE()}
-        # self.E_metrics = {"SAD": SADDegrees()}
         self.data = {}
         self.df = None
         self.summary = None

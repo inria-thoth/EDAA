@@ -1,5 +1,4 @@
 import logging
-import pdb
 
 from hydra.utils import instantiate
 
@@ -16,7 +15,6 @@ def main(cfg):
     setter = instantiate(cfg.setter)
     normalizer = instantiate(cfg.normalizer)
     initializer = instantiate(cfg.initializer)
-    # model = instantiate(cfg.model)
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
 
@@ -32,40 +30,26 @@ def main(cfg):
         )
         hsi.Y = noise.fit_transform(hsi.Y, SNR=cfg.SNR, seed=run)
 
-        E0 = initializer.init_like(hsi, seed=run)
-
         if run == 0:
             hsi.plot_endmembers(display=cfg.display)
             hsi.plot_abundances(display=cfg.display)
-            hsi.plot_PCA(display=cfg.display, E0=E0, initializer=True)
 
         aligner = instantiate(
             cfg.aligner,
             hsi=hsi,
             criterion=criterion,
         )
+
         Y, _, _ = hsi(asTensor=cfg.torch)
 
         E0, A0 = model.solve(
             Y,
             hsi.p,
-            # E0=E0,
-            E0=None,
-            hsi=hsi,
+            seed=run,
             H=hsi.H,
             W=hsi.W,
-            seed=run,
-            aligner=aligner,
-            mode="blind",
-            runs=cfg.nruns,
         )
 
-        sparsity = (A0 <= 0.01).sum() / A0.size
-        sparsity_printable = round(sparsity, 2)
-        logger.info(f"Sparsity => {sparsity_printable}")
-
-        # E1 = aligner.fit_transform(E0)
-        # A1 = aligner.transform_abundances(A0)
         A1 = aligner.fit_transform(A0)
         E1 = aligner.transform_endmembers(E0)
 
@@ -90,7 +74,6 @@ def main(cfg):
         )
 
         if hasattr(model, "Xmap"):
-            # X1 = aligner.transform_abundances(model.Xmap)
             X1 = aligner.transform(model.Xmap)
             hsi.plot_contributions(
                 X0=X1,
@@ -102,5 +85,5 @@ def main(cfg):
     RMSE.aggregate()
     SAD.aggregate()
 
-    # NOTE Save last estimates
+    # Save last estimates
     save_estimates(E1, A1, hsi)

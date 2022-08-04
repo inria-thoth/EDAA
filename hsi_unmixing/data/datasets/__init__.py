@@ -1,11 +1,5 @@
-from .APEX import (APEX4Dataset, APEX4OldDataset, APEX6Dataset,
-                   APEX6OldDataset, TinyAPEXDataset)
-from .Cuprite import CupriteDataset
-from .JasperRidge import JasperRidgeDataset, JasperRidgeRadiusDataset
-from .Samson import SamsonDataset, SamsonFixedDataset
-from .Simulated import (Sim1Dataset, Sim2Dataset, SimPDataset,
-                        SimulatedDataCubesNoPurePixelsDataset,
-                        SimulatedDataCubesNoPurePixelsHardDataset)
-from .Urban import (Urban4Dataset, Urban4RadiusDataset, Urban5Dataset,
-                    Urban6Dataset)
+from .APEX import TinyAPEXDataset
+from .JasperRidge import JasperRidgeDataset
+from .Samson import SamsonDataset
+from .Urban import Urban4Dataset, Urban5Dataset, Urban6Dataset
 from .WDC import WDCDataset

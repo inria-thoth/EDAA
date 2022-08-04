@@ -1,5 +1,6 @@
-_target_: hsi_unmixing.models.blind.EDA
-eta0: 0.1
-K: 1000
-alpha_init: "softmax"
-steps: "simple-sqrt"
+_target_: hsi_unmixing.models.blind.BlindEDA
+K1: 20
+K2: 20
+T: 50
+M: 100
+

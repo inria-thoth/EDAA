@@ -1,5 +1,3 @@
-from .CNNAEU import CNNAEU
-from .EDA import DSEDA, EDA, AlternatingEDA, EDAv1
-from .MiSiCNet import MiSiCNet
+from .EDA import BlindEDA
 from .NMFQMV import NMFQMV
 from .SPAMS import ArchetypalAnalysis

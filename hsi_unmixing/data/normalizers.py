@@ -55,8 +55,6 @@ class PixelwiseNorm(BaseNormalizer):
 
     def transform(self, Y):
         assert len(Y.shape) == 2
-        # Expect L (# HSI channels) x N (# HSI pixels)
-        # assert Y.shape[0] < Y.shape[1]
         num = Y
         denom = LA.norm(Y, axis=0, ord=self.order, keepdims=True)
         return (num / denom).astype(self.dtype)
@@ -85,7 +83,6 @@ class PixelwiseNormCutoff(BaseNormalizer):
         logger.info(f"Cutoff => {cutoff}")
         denom = np.maximum(norm, cutoff)
         res = (num / denom).astype(self.dtype)
-        # return res / res.max()
         return res
 
 

@@ -51,8 +51,6 @@ class HSI:
         assert self.E.shape == (self.L, self.p)
         assert self.Y.shape == (self.L, self.N)
 
-        # Normalize Y
-        # Normalizer = normalizers.__dict__[normalizer]()
         # NOTE: should GMM be applied to the endmembers here too?
 
         self.Y = GMM().transform(self.Y)
@@ -69,7 +67,6 @@ class HSI:
 
         except AssertionError:
             # Create pseudo labels
-            # self.labels = list(np.arange(self.p))
             self.labels = [f"#{ii}" for ii in range(self.p)]
 
         # Set GT abundances if not available
@@ -138,7 +135,7 @@ class HSI:
         self,
         E0=None,
         normalize=False,
-        display=True,
+        display=False,
         run=0,
     ):
         """
@@ -158,15 +155,9 @@ class HSI:
             linestyle = "--"
         max_correl = np.max(np.corrcoef(E.T) - np.eye(self.p))
         title += f"MaxCorrCoef => {round(max_correl, 2)}"
-        # if normalize:
-        #     title += " ($l_\infty$-normalized)"
-        #     ylabel += " Normalized"
-        # plt.figure(figsize=(12, 4))
         plt.figure(figsize=(6, 6))
         for pp in range(self.p):
             data = E[:, pp]
-            # if normalize:
-            #     data /= E[:, pp].max()
             plt.plot(data, label=self.labels[pp], linestyle=linestyle)
         plt.title(title)
         plt.legend(frameon=True)
@@ -176,7 +167,6 @@ class HSI:
             plt.show()
         else:
             figname = f"{self.shortname}-"
-            # figname += "GT_" if E0 is None else ""
             figname += f"endmembers-{run}-"
             figname += "GT" if E0 is None else ""
             figname += ".png"
@@ -188,7 +178,7 @@ class HSI:
         A0=None,
         grid=None,
         transpose=False,
-        display=True,
+        display=False,
         run=0,
     ):
         """
@@ -308,7 +298,7 @@ class HSI:
         grid=None,
         transpose=False,
         method=None,
-        display=True,
+        display=False,
         run=0,
     ):
         """
@@ -343,8 +333,6 @@ class HSI:
                 mappable = curr_ax.imshow(
                     X[kk, :, :],
                     cmap="inferno",
-                    # vmin=0.0,
-                    # vmax=1.0,
                 )
                 curr_ax.set_title(f"{self.labels[kk]}")
                 curr_ax.axis("off")
@@ -371,7 +359,7 @@ class HSI:
     def plot_PCA(
         self,
         E0=None,
-        display=True,
+        display=False,
         run=0,
         initializer=False,
     ):
@@ -381,14 +369,6 @@ class HSI:
         title = f"{self.shortname} 2D PCA-projected data manifold"
         xlabel = "PC #1"
         ylabel = "PC #2"
-        # if E0 is None:
-        #     E = np.copy(self.E)
-        #     title += " - GT"
-        # else:
-        #     assert self.E.shape == E0.shape
-        #     E = np.copy(E0)
-        #     title += " - Estimated endmembers"
-
         logger.info("Computing SVD...")
         U, _, _ = LA.svd(self.Y, full_matrices=False)
 
