@@ -67,7 +67,7 @@ def plot_abundances(Ahat, Agt, H, W, transpose=False):
 
 
 if __name__ == "__main__":
-    run_path = os.path.join("data", "runs", "2022-07-19_15-02-12")
+    run_path = os.path.join("data", "runs", "2022-08-04_16-39-25", "5")
     # run_path = os.getcwd()
     file_path = os.path.join(run_path, "estimates.mat")
     main(file_path)

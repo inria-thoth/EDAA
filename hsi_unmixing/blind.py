@@ -56,31 +56,33 @@ def main(cfg):
         RMSE.add_run(run, hsi.A, A1, hsi.labels)
         SAD.add_run(run, hsi.E, E1, hsi.labels)
 
-        hsi.plot_endmembers(
-            E0=E1,
-            display=cfg.display,
-            run=run,
-        )
-        hsi.plot_abundances(
-            A0=A1,
-            display=cfg.display,
-            run=run,
-        )
+        if cfg.save_figs:
 
-        hsi.plot_PCA(
-            E0=E1,
-            display=cfg.display,
-            run=run,
-        )
-
-        if hasattr(model, "Xmap"):
-            X1 = aligner.transform(model.Xmap)
-            hsi.plot_contributions(
-                X0=X1,
-                method=model,
+            hsi.plot_endmembers(
+                E0=E1,
                 display=cfg.display,
                 run=run,
             )
+            hsi.plot_abundances(
+                A0=A1,
+                display=cfg.display,
+                run=run,
+            )
+
+            hsi.plot_PCA(
+                E0=E1,
+                display=cfg.display,
+                run=run,
+            )
+
+            if hasattr(model, "Xmap"):
+                X1 = aligner.transform(model.Xmap)
+                hsi.plot_contributions(
+                    X0=X1,
+                    method=model,
+                    display=cfg.display,
+                    run=run,
+                )
 
     RMSE.aggregate()
     SAD.aggregate()
