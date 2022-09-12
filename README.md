@@ -103,7 +103,7 @@ python main.py dataset=Samson mode=supervised torch=False model=DS initializer=V
   * Archetypal Analysis (`AA`) from `SPAMS`.
   * Robust AA (`RAA`) from `SPAMS`.
   
-Command to run `RAA` on Samson:
+Command to run `AA` on Samson:
 ```
-python main.py dataset=Samson mode=blind torch=False model=RAA
+python main.py dataset=Samson mode=blind torch=False model=AA
 ```
