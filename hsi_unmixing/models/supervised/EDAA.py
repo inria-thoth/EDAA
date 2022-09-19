@@ -29,8 +29,7 @@ class SupervisedEDAA:
             return -E.t() @ (Y - E @ a)
 
         def update(a, b):
-            fact = 1 / (1 - self.etaA)
-            return F.softmax(fact * torch.log(a) + b, dim=0)
+            return F.softmax(torch.log(a) + b, dim=0)
 
         def computeLA():
             S = torch.linalg.svdvals(E)

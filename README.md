@@ -1,10 +1,15 @@
-# Hyperspectral Image Unmixing (HSU)
+<!-- # Hyperspectral Image Unmixing (HSU) -->
+# Entropic Gradient Archetypal Analysis for Blind Hyperspectral Unmixing
 
 ---
 
+Official PyTorch implementation of the paper _Entropic Gradient Archetypal Analysis for Blind Hyperspectral Unmixing_
+
 ## Introduction
 
-This repository implements various unmixing methods (supervised and blind) on several standard real datasets.
+This repository mainly implements the entropic gradient archetypal analysis method for blind hyperspectral unmixing.
+
+In addition, we include various unmixing methods (supervised and blind) on several standard real datasets.
 
 ---
 
