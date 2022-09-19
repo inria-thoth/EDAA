@@ -1,0 +1,4 @@
+_target_: hsi_unmixing.models.supervised.SupervisedEDAA
+K: 1000
+alpha_init: "softmax"
+steps: "sqrt-simple"

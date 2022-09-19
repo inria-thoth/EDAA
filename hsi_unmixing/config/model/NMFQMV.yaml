@@ -1,0 +1,3 @@
+_target_: hsi_unmixing.models.blind.NMFQMV
+term: "boundary"
+drawfigs: "no"

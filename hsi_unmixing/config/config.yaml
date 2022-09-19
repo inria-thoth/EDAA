@@ -1,0 +1,50 @@
+mode: "blind"
+seed: 0
+SNR: Null
+runs: 1
+display: False
+torch: True
+save_figs: True
+
+defaults:
+  - dataset : Samson
+  - normalizer: PixelwiseL2Norm
+  - setter: DS
+  - initializer: VCA
+  - model: BlindEDA
+  - aligner: munkresA
+  - noise: AWGN
+  - criterion: MSE
+  - _self_
+
+
+stdout: DEBUG
+
+hydra:
+  run:
+    dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}"
+  sweep:
+    dir: "./data/runs/${now:%Y-%m-%d_%H-%M-%S}/"
+  job_logging:
+    version: 1
+    formatters:
+      simple:
+        format: '[%(name)s][%(levelname)s] - %(message)s'
+      detailed:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: simple
+        level: ${stdout}
+        stream: ext://sys.stdout
+      file:
+        class : logging.handlers.RotatingFileHandler
+        formatter: detailed
+        level: DEBUG
+        filename: debug.log
+    root:
+      handlers: [console, file]
+
+    disable_existing_loggers: false
+
