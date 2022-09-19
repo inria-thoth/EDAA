@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class SupervisedEDA:
+class SupervisedEDAA:
     def __init__(self, K=1000, epsilon=0.0):
         self.K = K
         self.epsilon = epsilon

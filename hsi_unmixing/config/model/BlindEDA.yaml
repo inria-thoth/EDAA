@@ -1,6 +1,0 @@
-_target_: hsi_unmixing.models.blind.BlindEDA
-K1: 5
-K2: 5
-T: 100
-M: 50
-

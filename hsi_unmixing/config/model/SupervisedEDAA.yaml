@@ -1,4 +1,4 @@
-_target_: hsi_unmixing.models.supervised.EDA
+_target_: hsi_unmixing.models.supervised.SupervisedEDAA
 eta0: 0.1
 K: 1000
 alpha_init: "softmax"
