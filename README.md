@@ -1,10 +1,15 @@
-# Hyperspectral Image Unmixing (HSU)
+<!-- # Hyperspectral Image Unmixing (HSU) -->
+# Entropic Gradient Archetypal Analysis for Blind Hyperspectral Unmixing
 
 ---
 
+Official PyTorch implementation of the paper _Entropic Gradient Archetypal Analysis for Blind Hyperspectral Unmixing_
+
 ## Introduction
 
-This repository implements various unmixing methods (supervised and blind) on several standard real datasets.
+This repository mainly implements the entropic gradient archetypal analysis method for blind hyperspectral unmixing.
+
+In addition, we include various unmixing methods (supervised and blind) on several standard real datasets.
 
 ---
 
@@ -24,7 +29,8 @@ conda activate hsu
 ```
 
 ```
-pip install -r requirements.txt
+git clone https://github.com/inria-thoth/EDAA
+cd EDAA && pip install -r requirements.txt
 ```
 
 ---
@@ -63,10 +69,10 @@ python -m utils.prepare_datasets
 
 This repository uses [hydra](https://hydra.cc/) to seamlessly manage different configurations over the command line.
 
-To run the `EDA` model on the `Samson` dataset, use the following command:
+To run the `EDAA` model on the `Samson` dataset, use the following command:
 
 ```
-python main.py dataset=Samson mode=blind model=BlindEDA
+python main.py dataset=Samson mode=blind model=BlindEDAA
 ```
 
 The different datasets available are listed under `./hsi_unmixing/config/dataset`:
@@ -77,10 +83,10 @@ The different datasets available are listed under `./hsi_unmixing/config/dataset
 * TinyAPEX
 * WDC
 
-To run the `EDA` model on all datasets, use the following command:
+To run the `EDAA` model on all datasets, use the following command:
 
 ```
-python main.py dataset=Samson,JasperRidge,Urban4,Urban6,TinyAPEX,WDC mode=blind model=BlindEDA --multirun
+python main.py dataset=Samson,JasperRidge,Urban4,Urban6,TinyAPEX,WDC mode=blind model=BlindEDAA --multirun
 ```
 
 ---
