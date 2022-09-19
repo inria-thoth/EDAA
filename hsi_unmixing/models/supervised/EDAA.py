@@ -9,9 +9,8 @@ logger.setLevel(logging.DEBUG)
 
 
 class SupervisedEDAA:
-    def __init__(self, K=1000, epsilon=0.0):
+    def __init__(self, K=1000):
         self.K = K
-        self.epsilon = epsilon
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def solve(
@@ -29,8 +28,8 @@ class SupervisedEDAA:
         def grad_A(a):
             return -E.t() @ (Y - E @ a)
 
-        def update(a, b, epsilon):
-            fact = 1 / (1 - epsilon * self.etaA)
+        def update(a, b):
+            fact = 1 / (1 - self.etaA)
             return F.softmax(fact * torch.log(a) + b, dim=0)
 
         def computeLA():
@@ -48,7 +47,7 @@ class SupervisedEDAA:
             self.etaA = 1.0 / computeLA()
 
             for kk in range(self.K):
-                A = update(A, -self.etaA * grad_A(A), self.epsilon)
+                A = update(A, -self.etaA * grad_A(A))
 
             A = A.cpu().numpy()
 
