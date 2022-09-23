@@ -15,12 +15,13 @@ In addition, we include various unmixing methods (supervised and blind) on sever
 
 ## Installation
 
-This repository was developed using Ubuntu 20.04 LTS, Python 3.8.8 and MATLAB 2020b.
+This repository was developed using Ubuntu 20.04 LTS, Python 3.8 and MATLAB 2020b.
 
 We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
+If you do not have `conda`, please install it using [Miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html#regular-installation).
 
 ```
-conda create --name hsu --file conda.txt
+conda create --name hsu python=3.8
 ```
 
 Activate the new `conda` environment to install the Python packages and run the code:
