@@ -1,6 +1,5 @@
 import logging
 import os
-import pdb
 import shutil
 
 import hydra
@@ -34,10 +33,10 @@ def main(cfg: DictConfig) -> None:
         from hsi_unmixing.blind import main as _main
     elif mode == "supervised":
         from hsi_unmixing.supervised import main as _main
-    elif mode == "multistop":
-        from hsi_unmixing.multistop import main as _main
-    elif mode == "clustering":
-        from hsi_unmixing.clustering import main as _main
+    elif mode == "cuprite":
+        from hsi_unmixing.cuprite import main as _main
+    elif mode == "simulated":
+        from hsi_unmixing.simulated import main as _main
     else:
         raise ValueError(f"Mode {mode} is invalid")
 
