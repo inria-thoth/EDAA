@@ -15,22 +15,12 @@ In addition, we include various unmixing methods (supervised and blind) on sever
 
 ## Installation
 
-<<<<<<< HEAD
 This repository was developed using Ubuntu 20.04 LTS, Python 3.8.8 and MATLAB 2020b.
 
 We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
 
 ```
 conda create --name hsu --file conda.txt
-=======
-This repository was developed using Ubuntu 20.04 LTS, Python 3.8 and MATLAB 2020b.
-
-We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
-If you do not have `conda`, please install it using [Miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html#regular-installation).
-
-```
-conda create --name hsu python=3.8
->>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 ```
 
 Activate the new `conda` environment to install the Python packages and run the code:
@@ -65,11 +55,7 @@ python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
 
 ### Data download
 
-<<<<<<< HEAD
-The data is already included in the repository inside a `zip` file.
-=======
 The data can be downloaded from [http://pascal.inrialpes.fr/data2/azouaoui/data.zip](http://pascal.inrialpes.fr/data2/azouaoui/data.zip).
->>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 
 To extract it in the appropriate `./data` directory, simply run:
 
@@ -77,8 +63,6 @@ To extract it in the appropriate `./data` directory, simply run:
 python -m utils.prepare_datasets
 ```
 
-<<<<<<< HEAD
-=======
 If for whatever reasons you were not able to use the script above:
 
 1. Download the file directly from the [link](http://pascal.inrialpes.fr/data2/azouaoui/data.zip).
@@ -86,7 +70,6 @@ If for whatever reasons you were not able to use the script above:
 3. Extract `data.zip` into `./data`.
 4. You should have all 7 datasets directly available in the `./data` folder.
 
->>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 ---
 
 ## Getting started
