@@ -1,0 +1,2 @@
+_target_: hsi_unmixing.models.blind.NCAA
+n_clust: 20

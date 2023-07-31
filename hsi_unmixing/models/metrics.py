@@ -73,7 +73,7 @@ class MeanSquareError(BaseMetric):
         normE = LA.norm(E, axis=0, keepdims=True)
         normEref = LA.norm(Eref, axis=0, keepdims=True)
 
-        return np.sqrt(normE.T ** 2 + normEref ** 2 - 2 * (E.T @ Eref))
+        return np.sqrt(normE.T**2 + normEref**2 - 2 * (E.T @ Eref))
 
 
 class aRMSE(BaseMetric):
@@ -83,6 +83,24 @@ class aRMSE(BaseMetric):
     def __call__(self, A, Aref):
         A, Aref = self._check_input(A, Aref)
         return 100 * np.sqrt(((A - Aref) ** 2).mean())
+
+
+class eRMSE(BaseMetric):
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, E, Eref):
+        E, Eref = self._check_input(E, Eref)
+        return 100 * np.sqrt(((E - Eref) ** 2).mean())
+
+
+class SRE(BaseMetric):
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, X, Xref):
+        X, Xref = self._check_input(X, Xref)
+        return 20 * np.log10(LA.norm(Xref, "fro") / LA.norm(Xref - X, "fro"))
 
 
 class RunAggregator:
@@ -101,16 +119,17 @@ class RunAggregator:
         self.df = None
         self.summary = None
 
-    def add_run(self, run, X, Xhat, labels):
+    def add_run(self, run, X, Xhat, labels, detail=True):
 
         d = {}
         d["Overall"] = self.metric(X, Xhat)
-        for ii, label in enumerate(labels):
-            if self.use_endmembers:
-                x, xhat = X[:, ii][:, None], Xhat[:, ii][:, None]
-                d[label] = self.metric(x, xhat)
-            else:
-                d[label] = self.metric(X[ii], Xhat[ii])
+        if detail:
+            for ii, label in enumerate(labels):
+                if self.use_endmembers:
+                    x, xhat = X[:, ii][:, None], Xhat[:, ii][:, None]
+                    d[label] = self.metric(x, xhat)
+                else:
+                    d[label] = self.metric(X[ii], Xhat[ii])
 
         logger.debug(f"Run {run}: {self.metric} => {d}")
 
@@ -137,9 +156,19 @@ class SADAggregator(RunAggregator):
         super().__init__(SADDegrees(), use_endmembers=True)
 
 
-class RMSEAggregator(RunAggregator):
+class ARMSEAggregator(RunAggregator):
     def __init__(self):
         super().__init__(aRMSE(), use_endmembers=False)
+
+
+class ERMSEAggregator(RunAggregator):
+    def __init__(self):
+        super().__init__(eRMSE(), use_endmembers=True)
+
+
+class SREAggregator(RunAggregator):
+    def __init__(self):
+        super().__init__(SRE(), use_endmembers=False)
 
 
 def sad(x, xhat):

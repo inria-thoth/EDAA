@@ -1,6 +1,9 @@
 _target_: hsi_unmixing.models.blind.BlindEDAA
-K1: 5
-K2: 5
+K1: 20
+K2: 20
 T: 100
 M: 50
+AA_init: False
+FISTA_steps: 0
+l2_fit: False
 
