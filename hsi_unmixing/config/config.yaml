@@ -5,9 +5,12 @@ runs: 1
 display: False
 torch: True
 save_figs: True
+<<<<<<< HEAD
 p: 8
 normalize: False
 rho: 0.7
+=======
+>>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 
 defaults:
   - dataset : Samson

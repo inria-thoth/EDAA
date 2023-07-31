@@ -2,11 +2,15 @@ import logging
 
 from hydra.utils import instantiate
 
+<<<<<<< HEAD
 from hsi_unmixing.models.metrics import (
     ARMSEAggregator,
     SADAggregator,
     ERMSEAggregator,
 )
+=======
+from hsi_unmixing.models.metrics import RMSEAggregator, SADAggregator
+>>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 from hsi_unmixing.utils import save_estimates
 
 logger = logging.getLogger(__name__)
@@ -22,9 +26,14 @@ def main(cfg):
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
 
+<<<<<<< HEAD
     ARMSE = ARMSEAggregator()
     SAD = SADAggregator()
     ERMSE = ERMSEAggregator()
+=======
+    RMSE = RMSEAggregator()
+    SAD = SADAggregator()
+>>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 
     for run in range(cfg.runs):
         model = instantiate(cfg.model)
@@ -58,9 +67,14 @@ def main(cfg):
         A1 = aligner.fit_transform(A0)
         E1 = aligner.transform_endmembers(E0)
 
+<<<<<<< HEAD
         ARMSE.add_run(run, hsi.A, A1, hsi.labels)
         SAD.add_run(run, hsi.E, E1, hsi.labels)
         ERMSE.add_run(run, hsi.scaledE, E1, hsi.labels)
+=======
+        RMSE.add_run(run, hsi.A, A1, hsi.labels)
+        SAD.add_run(run, hsi.E, E1, hsi.labels)
+>>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 
         if cfg.save_figs:
 
@@ -90,9 +104,14 @@ def main(cfg):
                     run=run,
                 )
 
+<<<<<<< HEAD
     ARMSE.aggregate()
     SAD.aggregate()
     ERMSE.aggregate()
+=======
+    RMSE.aggregate()
+    SAD.aggregate()
+>>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 
     # Save last estimates
     save_estimates(E1, A1, hsi)

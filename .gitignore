@@ -4,6 +4,7 @@
 *.mat
 *.zip
 *.ipynb
+*.orig
 
 # Helper notebook
 /notebooks
