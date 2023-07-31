@@ -15,7 +15,21 @@ In addition, we include various unmixing methods (supervised and blind) on sever
 
 ## Installation
 
+<<<<<<< HEAD
 This repository was developed using Ubuntu 20.04 LTS, Python 3.8.8 and MATLAB 2020b.
+||||||| merged common ancestors
+This repository was developed using Ubuntu 20.04 LTS, Python 3.8 and MATLAB 2020b.
+=======
+<<<<<<< HEAD
+This repository was developed using Ubuntu 20.04 LTS, Python 3.8.8 and MATLAB 2020b.
+
+We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
+
+```
+conda create --name hsu --file conda.txt
+=======
+This repository was developed using Ubuntu 20.04 LTS, Python 3.8 and MATLAB 2020b.
+>>>>>>> e1ab0c9274f5ffb78277c53d57e36bcf4e7e491d
 
 We recommend using `conda` to handle the Python distribution and `pip` to install the Python packages.
 
@@ -55,7 +69,11 @@ python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
 
 ### Data download
 
+<<<<<<< HEAD
+The data is already included in the repository inside a `zip` file.
+=======
 The data can be downloaded from [http://pascal.inrialpes.fr/data2/azouaoui/data.zip](http://pascal.inrialpes.fr/data2/azouaoui/data.zip).
+>>>>>>> 676a96c56d8d4dab905e83b7996d748c3975f3e0
 
 To extract it in the appropriate `./data` directory, simply run:
 
