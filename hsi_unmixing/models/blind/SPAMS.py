@@ -1,13 +1,68 @@
 import logging
-import pdb
 import time
 
 import numpy as np
 import scipy.sparse as sp
 import spams
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class DecompSimplex:
+    def __init__(self, T):
+        self.T = T
+        self.time = 0
+
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}"
+        return msg
+
+    def solve(
+        self,
+        Y,
+        p,
+        *args,
+        **kwargs,
+    ):
+        def loss(a, b):
+            return 0.5 * ((Y - (Y @ b) @ a) ** 2).sum()
+
+        def update_spamsB(a, b):
+            R = Y - (Y @ b) @ a
+            for ii in range(p):
+                R = R + (Y @ b[:, ii])[:, np.newaxis] @ a[ii, :][np.newaxis, :]
+                z = (R @ a[ii, :]) / (a[ii, :] @ a[ii, :].T)
+                z = np.asfortranarray(z[:, np.newaxis])
+                bb = spams.decompSimplex(z, YY)
+                b[:, ii] = np.squeeze(bb.todense())
+                R = R - (Y @ b[:, ii])[:, np.newaxis] @ a[ii, :][np.newaxis, :]
+            return b
+
+        tic = time.time()
+
+        _, N = Y.shape
+
+        YY = np.asfortranarray(Y)
+        B = (1 / N) * np.ones((N, p))
+        A = (1 / p) * np.ones((p, N))
+
+        for _ in tqdm(range(self.T)):
+            logger.debug(f"pre update B => {loss(A, B):.2f}")
+            B = update_spamsB(A, B)
+            logger.debug(f"post update B => {loss(A, B):.2f}")
+            logger.debug(f"pre update A => {loss(A, B):.2f}")
+            A = np.array(spams.decompSimplex(YY, np.asfortranarray(Y @ B)).todense())
+            logger.debug(f"post update A => {loss(A, B):.2f}")
+
+        tac = time.time()
+
+        self.time = round(tac - tic, 2)
+
+        logger.info(f"{self} took {self.time}s")
+
+        return Y @ B, A
 
 
 class ArchetypalAnalysis:

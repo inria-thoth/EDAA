@@ -1,0 +1,3 @@
+_target_: hsi_unmixing.models.blind.MiSiCNet
+lambd: 100.0
+

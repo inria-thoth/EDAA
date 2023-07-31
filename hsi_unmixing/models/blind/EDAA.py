@@ -5,17 +5,31 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
+import spams
+import scipy.sparse as sp
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 class BlindEDAA:
-    def __init__(self, T=50, K1=20, K2=20, M=100):
+    def __init__(
+        self,
+        T=50,
+        K1=20,
+        K2=20,
+        M=100,
+        AA_init=True,
+        FISTA_steps=1,
+        l2_fit=False,
+    ):
         self.T = T
         self.K1 = K1
         self.K2 = K2
         self.M = M
+        self.AA_init = AA_init
+        self.FISTA_steps = FISTA_steps
+        self.l2_fit = l2_fit
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.endmembers = []
@@ -32,6 +46,30 @@ class BlindEDAA:
         min_max_corrcoef = 10.0
 
         L, N = Y.shape
+
+        # TODO AA init (3 FISTA steps)
+        logger.debug(f"AA init ({self.AA_init})")
+        _, A_init, B_init = spams.archetypalAnalysis(
+            np.asfortranarray(Y, dtype=np.float64),
+            p=p,
+            Z0=None,
+            returnAB=True,
+            robust=False,
+            epsilon=1e-3,
+            randominit=False,
+            numThreads=-1,
+            stepsAS=0,
+            stepsFISTA=self.FISTA_steps,
+            computeXtX=True,
+        )
+
+        A_init = sp.csc_matrix.toarray(A_init)
+        B_init = sp.csc_matrix.toarray(B_init)
+
+        logger.debug(f"A init shape => {A_init.shape}")
+        logger.debug(f"B init shape => {B_init.shape}")
+
+        Y = torch.Tensor(Y)
 
         def residual(a, b):
             return 0.5 * ((Y - (Y @ b) @ a) ** 2).sum()
@@ -71,8 +109,14 @@ class BlindEDAA:
             with torch.no_grad():
 
                 # Matrix initialization
-                B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
-                A = (1 / p) * torch.ones((p, N))
+                # B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
+                # A = (1 / p) * torch.ones((p, N))
+                if self.AA_init:
+                    B = torch.Tensor(np.copy(B_init))
+                    A = torch.Tensor(np.copy(A_init))
+                else:
+                    B = F.softmax(0.1 * torch.rand((N, p)), dim=0)
+                    A = (1 / p) * torch.ones((p, N))
 
                 # Send matrices on GPU
                 Y = Y.to(self.device)
@@ -93,7 +137,11 @@ class BlindEDAA:
                     for kk in range(self.K2):
                         B = update(B, -self.etaB * grad_B(A, B))
 
-                fit_m = residual_l1(A, B).item()
+                # fit_m = residual_l1(A, B).item()
+                if self.l2_fit:
+                    fit_m = loss(A, B).item()
+                else:
+                    fit_m = residual_l1(A, B).item()
                 E = (Y @ B).cpu().numpy()
                 A = A.cpu().numpy()
                 Xmap = B.t().cpu().numpy()
@@ -118,6 +166,11 @@ class BlindEDAA:
             filter(fit_l1_cutoff, results),
             key=lambda x: results[x]["Rm"],
         )
+
+        # sorted_indices = sorted(
+        #     filter(fit_l1_cutoff, results),
+        #     key=lambda x: results[x]["fit_m"],
+        # )
 
         best_result_idx = sorted_indices[0]
         best_result = results[best_result_idx]

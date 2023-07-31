@@ -2,6 +2,8 @@
 /data
 *.json
 *.mat
+*.zip
+*.ipynb
 
 # Helper notebook
 /notebooks

@@ -3,7 +3,7 @@ import logging
 import torch
 from hydra.utils import instantiate
 
-from hsi_unmixing.models.metrics import RMSEAggregator, SADAggregator
+from hsi_unmixing.models.metrics import ARMSEAggregator, SADAggregator, ERMSEAggregator
 from hsi_unmixing.utils import save_estimates
 
 logger = logging.getLogger(__name__)
@@ -18,8 +18,9 @@ def main(cfg):
     noise = instantiate(cfg.noise)
     criterion = instantiate(cfg.criterion)
 
-    RMSE = RMSEAggregator()
+    ARMSE = ARMSEAggregator()
     SAD = SADAggregator()
+    ERMSE = ERMSEAggregator()
 
     for run in range(cfg.runs):
         hsi = instantiate(
@@ -55,8 +56,9 @@ def main(cfg):
         if cfg.torch:
             A1 = A1.detach().numpy()
 
-        RMSE.add_run(run, hsi.A, A1, hsi.labels)
+        ARMSE.add_run(run, hsi.A, A1, hsi.labels)
         SAD.add_run(run, hsi.E, E1, hsi.labels)
+        ERMSE.add_run(run, hsi.scaledE, E1, hsi.labels)
 
         hsi.plot_endmembers(
             E0=E1,
@@ -74,8 +76,9 @@ def main(cfg):
             run=run,
         )
 
-    RMSE.aggregate()
+    ARMSE.aggregate()
     SAD.aggregate()
+    ERMSE.aggregate()
 
     # NOTE Save last estimates
     save_estimates(E1, A1, hsi)
