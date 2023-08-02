@@ -119,7 +119,6 @@ class RunAggregator:
         self.df = None
         self.summary = None
 
-<<<<<<< HEAD
     def add_run(self, run, X, Xhat, labels, detail=True):
 
         d = {}
