@@ -1,8 +1,6 @@
 <!-- # Hyperspectral Image Unmixing (HSU) -->
 # Entropic Gradient Archetypal Analysis for Blind Hyperspectral Unmixing
 
----
-
 Official PyTorch implementation of the paper _Entropic Gradient Archetypal Analysis for Blind Hyperspectral Unmixing_
 
 ## Introduction
@@ -11,7 +9,12 @@ This repository mainly implements the entropic gradient archetypal analysis meth
 
 In addition, we include various unmixing methods (supervised and blind) on several standard real datasets.
 
----
+
+## Citing EDAA
+
+The authors kindly ask users to cite EDAA in their publications if they use it in their research:
+
+*A. Zouaoui, G. Muhawenayo, B. Rasti, J. Chanussot, J. Mairal, "Entropic descent archetypal analysis for blind hyperspectral unmixing", in IEEE Transactions on Image Processing, doi: 10.1109/TIP.2023.3301769*
 
 ## Installation
 
