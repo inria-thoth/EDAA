@@ -45,7 +45,7 @@ To install `matlab.engine`, first visit the official [webpage](https://www.mathw
   2. Create a `matlab` build directory (e.g. `~/matlab/`)
   3. Locate your current `conda` environment (e.g. `~/conda/envs/hsu`)
 
-```
+```shell
 cd $matlabroot/extern/engines/python
 conda activate hsu
 python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
@@ -59,7 +59,7 @@ The data can be downloaded from [http://pascal.inrialpes.fr/data2/azouaoui/data.
 
 To extract it in the appropriate `./data` directory, simply run:
 
-```
+```shell
 python -m utils.prepare_datasets
 ```
 
@@ -78,7 +78,7 @@ This repository uses [hydra](https://hydra.cc/) to seamlessly manage different c
 
 To run the `EDAA` model on the `Samson` dataset, use the following command:
 
-```
+```shell
 python main.py dataset=Samson mode=blind model=BlindEDAA
 ```
 
@@ -92,7 +92,7 @@ The different datasets available are listed under `./hsi_unmixing/config/dataset
 
 To run the `EDAA` model on all datasets, use the following command:
 
-```
+```shell
 python main.py dataset=Samson,JasperRidge,Urban4,Urban6,TinyAPEX,WDC mode=blind model=BlindEDAA --multirun
 ```
 
@@ -107,7 +107,7 @@ This repository implements other supervised and blind hyperspectral unmixing tec
   * FCLSU using `VCA` (Python implementation) and `FCLS` from `pysptools` (slower).
 
 Command to run FCLSU using VCA+DS on Samson:
-```
+```shell
 python main.py dataset=Samson mode=supervised torch=False model=DS initializer=VCA
 ```
 
@@ -117,6 +117,6 @@ python main.py dataset=Samson mode=supervised torch=False model=DS initializer=V
   * Robust AA (`RAA`) from `SPAMS`.
   
 Command to run `AA` on Samson:
-```
+```shell
 python main.py dataset=Samson mode=blind torch=False model=AA
 ```
