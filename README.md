@@ -50,8 +50,8 @@ To install `matlab.engine`, first visit the official [webpage](https://www.mathw
 
 ```shell
 cd $matlabroot/extern/engines/python
-conda activate hsu
-python setup.py build -b ~/matlab install --prefix ~/conda/envs/hsu
+conda activate edaa
+python setup.py build -b ~/matlab install --prefix ~/conda/envs/edaa
 ```
 
 ---
